@@ -97,7 +97,7 @@
     const completedList = document.getElementById('completed-list');
 
     // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyo0ZymAvLpcPWw1WwLa5NutNSu7U4n8eMcdVV11GG5pXNFEQknYoFzarLXnIFtYskx/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw328Y4MzlGO_7eO2TwXbpCmum0A_6JujIgKgp65JcCI8Erp5NC-rlmQH2plGcSvBHf/exec";
 
     let selectedDate = new Date().toISOString().split('T')[0];
 
@@ -118,33 +118,24 @@
         }
     };
 
-    // HÀM GỬI DỮ LIỆU SIÊU ỔN ĐỊNH
     async function postTaskToSheet(taskText, taskDate) {
-        const btnIcon = addBtn.querySelector('i');
-        btnIcon.className = 'fas fa-spinner fa-spin'; 
-        
-        try {
-            // Gửi dữ liệu theo kiểu "Simple Request" để không bị chặn CORS
-            await fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors', // Chế độ không chặn
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    date: taskDate,
-                    note: taskText
-                })
-            });
-            
-            // Hiện thông báo (Nếu dùng no-cors, alert sẽ hiện ngay sau khi gửi thành công)
-            alert("Đã gửi ghi chú: '" + taskText + "' cho ngày " + taskDate);
-            
-        } catch (error) {
-            console.error("Lỗi:", error);
-            alert("Lỗi kết nối: " + error.message);
-        } finally {
-            btnIcon.className = 'fas fa-plus';
-        }
+    console.log("Đang gửi:", taskDate, taskText);
+    try {
+        await fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors", // Bắt buộc dùng no-cors để GitHub không bị chặn
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+                date: taskDate,
+                note: taskText
+            })
+        });
+        // Hiện thông báo để xác nhận nút bấm đã hoạt động
+        alert("Lệnh đã gửi: " + taskText + "\nNgày: " + taskDate);
+    } catch (e) {
+        alert("Lỗi kết nối: " + e.message);
     }
+}
 
     async function addTask() {
         const val = input.value.trim();
