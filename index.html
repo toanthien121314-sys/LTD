@@ -97,7 +97,7 @@
     const completedList = document.getElementById('completed-list');
 
     // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyn3Todo2oh8V4zxKi_S2qtAsAyQBZ_xyeXKb2uf9ajDBOKzYQ3VPn4N05Qa59dL2JF/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyo0ZymAvLpcPWw1WwLa5NutNSu7U4n8eMcdVV11GG5pXNFEQknYoFzarLXnIFtYskx/exec";
 
     let selectedDate = new Date().toISOString().split('T')[0];
 
@@ -109,25 +109,39 @@
         dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     };
 
-    // HÀM GỬI DỮ LIỆU ĐÃ TỐI ƯU
     async function postTaskToSheet(taskText, taskDate) {
-        const btnIcon = addBtn.querySelector('i');
-        btnIcon.className = 'fas fa-spinner fa-spin'; // Hiệu ứng xoay báo đang lưu
+        const btn = document.getElementById('add-btn');
+        btn.disabled = true; // Chống bấm liên tục
         
         try {
-            const response = await fetch(WEB_APP_URL, {
+            const response = await fetch("DÁN_URL_WEB_APP_MỚI_VÀO_ĐÂY", {
                 method: 'POST',
+                mode: 'no-cors', // Thêm dòng này nếu bị lỗi bảo mật trình duyệt
                 body: JSON.stringify({
-                    date: taskDate, // Gửi chính xác ngày đã chọn lúc bấm nút
+                    date: taskDate,
                     note: taskText
                 })
             });
-            const result = await response.json();
-            console.log("Kết quả:", result.message);
+            
+            // Vì dùng 'no-cors' ta không đọc được response, nên tạm thời hiện báo thành công
+            alert("Đã gửi lệnh lưu cho ngày " + taskDate); 
+            
         } catch (error) {
-            alert("Lỗi: Không kết nối được với Sheet. Hãy kiểm tra lại URL Web App.");
+            alert("Lỗi kết nối: " + error.message);
         } finally {
-            btnIcon.className = 'fas fa-plus';
+            btn.disabled = false;
+        }
+    }
+
+    async function addTask() {
+        const val = input.value.trim();
+        const dateAtClick = selectedDate; 
+        if (val) {
+            pendingList.appendChild(createRow(val, false));
+            input.value = "";
+            updateStats();
+            // Gọi lệnh lưu
+            await postTaskToSheet(val, dateAtClick);
         }
     }
 
