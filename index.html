@@ -91,33 +91,42 @@
 <script>
     const input = document.getElementById('task-input');
     const addBtn = document.getElementById('add-btn');
-    const dateBtn = document.getElementById('date-btn');
     const dateInput = document.getElementById('task-date-input');
     const dateDisplay = document.getElementById('selected-date-display');
     const pendingList = document.getElementById('pending-list');
     const completedList = document.getElementById('completed-list');
 
-    // Mặc định là ngày hiện tại
+    // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxbjzqho-wjNCsJ8YaeiAhTAW53fdX8VjBDWArPPLOXrhot7fXjTRgQoHJIZrcOAKIx/exec";
+
     let selectedDate = new Date().toISOString().split('T')[0];
 
-    // Xử lý chọn ngày
-    dateBtn.onclick = () => dateInput.showPicker(); // Mở bảng chọn ngày
-    
+    // Chọn ngày
+    document.getElementById('date-btn').onclick = () => dateInput.showPicker();
     dateInput.onchange = (e) => {
         selectedDate = e.target.value;
         const d = new Date(selectedDate);
         dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     };
 
-    function updateStats() {
-        const pCount = pendingList.querySelectorAll('li').length;
-        const cCount = completedList.querySelectorAll('li').length;
-        const total = pCount + cCount;
-        document.getElementById('pending-count').innerText = pCount;
-        document.getElementById('completed-count').innerText = cCount;
-        const percent = total === 0 ? 0 : Math.round((cCount / total) * 100);
-        document.getElementById('progress-fill').style.width = percent + "%";
-        document.getElementById('progress-text').innerText = percent + "%";
+    // HÀM GỬI DỮ LIỆU LÊN SHEET
+    async function postTaskToSheet(taskText) {
+        addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Hiệu ứng đang lưu
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    date: selectedDate,
+                    note: taskText
+                })
+            });
+            const result = await response.json();
+            console.log("Sheet phản hồi:", result.message);
+        } catch (error) {
+            alert("Lỗi kết nối Sheet!");
+        } finally {
+            addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+        }
     }
 
     function createRow(text, isDone) {
@@ -135,27 +144,37 @@
             updateStats();
         };
 
-        li.querySelector('.del-btn').onclick = () => {
-            li.remove();
-            updateStats();
-        };
-
+        li.querySelector('.del-btn').onclick = () => { li.remove(); updateStats(); };
         return li;
     }
 
-    function addTask() {
+    async function addTask() {
         const val = input.value.trim();
         if (val) {
-            // Sau này bạn sẽ gửi kèm biến 'selectedDate' này lên Google Sheets
+            // 1. Hiển thị tạm thời trên giao diện App
             pendingList.appendChild(createRow(val, false));
+            
+            // 2. Gửi dữ liệu thật lên Google Sheets
+            await postTaskToSheet(val);
+            
             input.value = "";
             updateStats();
         }
     }
 
+    function updateStats() {
+        const pCount = pendingList.querySelectorAll('li').length;
+        const cCount = completedList.querySelectorAll('li').length;
+        const total = pCount + cCount;
+        document.getElementById('pending-count').innerText = pCount;
+        document.getElementById('completed-count').innerText = cCount;
+        const percent = total === 0 ? 0 : Math.round((cCount / total) * 100);
+        document.getElementById('progress-fill').style.width = percent + "%";
+        document.getElementById('progress-text').innerText = percent + "%";
+    }
+
     addBtn.onclick = addTask;
     input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
-    updateStats();
 </script>
 
 </body>
