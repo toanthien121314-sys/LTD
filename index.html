@@ -1,60 +1,200 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Meow Garden Timeline</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meow Garden Task Manager</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .error-msg { color: red; border: 1px solid red; padding: 10px; display: none; }
-        .loading { color: #666; }
-        /* Style cho các ô ngày giống trong Sheet của bạn */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 400px; }
-        .day { border: 1px solid #ddd; padding: 10px; text-align: center; background: #f9f9f9; cursor: pointer; }
-        .day.busy { background: #ff4d4d; color: white; }
+        :root {
+            --primary-color: #4ade80;
+            --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #102a43;
+            --text-secondary: #627d98;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        header { margin-bottom: 25px; }
+        header h1 { color: var(--text-main); font-size: 1.8rem; margin-bottom: 10px; }
+
+        /* Progress Bar */
+        .progress-container {
+            background: #e4e9f0;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            background: var(--primary-color);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Input Area */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e4e9f0;
+            border-radius: 12px;
+            outline: none;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus { border-color: var(--primary-color); }
+        
+        button#add-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 45px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+        button#add-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        /* Task List */
+        ul { list-style: none; }
+        li {
+            background: white;
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            transition: 0.3s;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        li.completed { opacity: 0.6; }
+        li.completed span { text-decoration: line-through; color: var(--text-secondary); }
+
+        .check-btn {
+            color: #ccc;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+        li.completed .check-btn { color: var(--primary-color); }
+
+        .task-text { flex: 1; color: var(--text-main); font-weight: 500; }
+
+        .del-btn {
+            color: #ff4d4d;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        li:hover .del-btn { opacity: 1; }
     </style>
 </head>
 <body>
-    <h2>Lịch Trình Meow Garden</h2>
-    <div id="status" class="loading">Đang kết nối với Google Sheets...</div>
-    <div id="error" class="error-msg"></div>
-    <div id="app"></div>
 
-    <script>
-        // THAY URL NÀY BẰNG URL WEB APP MỚI NHẤT CỦA BẠN
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeel5crQikfdWcfbhnoJsgLCN0gZmBubmDoiBuTQTzBLvVog6YsM36i3Vnju8dK7dE/exec"; 
+<div class="container">
+    <header>
+        <h1>Meow Garden ✨</h1>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Hôm nay bạn cần làm gì?</p>
+    </header>
 
-        async function fetchData() {
-            try {
-                const response = await fetch(WEB_APP_URL);
-                if (!response.ok) throw new Error("Không thể kết nối với Web App GAS.");
-                
-                const data = await response.json();
-                renderCalendar(data);
-                document.getElementById('status').style.display = 'none';
-            } catch (err) {
-                document.getElementById('status').style.display = 'none';
-                const errDiv = document.getElementById('error');
-                errDiv.style.display = 'block';
-                errDiv.innerText = "Lỗi: " + err.message + ". Hãy kiểm tra xem bạn đã Deploy GAS ở chế độ 'Anyone' chưa?";
-                console.error(err);
-            }
+    <div class="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="task-input" placeholder="Thêm công việc mới...">
+        <button id="add-btn"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <ul id="task-list">
+        </ul>
+</div>
+
+<script>
+    const input = document.getElementById('task-input');
+    const addBtn = document.getElementById('add-btn');
+    const taskList = document.getElementById('task-list');
+    const progressBar = document.getElementById('progress-bar');
+
+    function updateProgress() {
+        const tasks = document.querySelectorAll('li');
+        const completedTasks = document.querySelectorAll('li.completed');
+        if (tasks.length === 0) {
+            progressBar.style.width = '0%';
+            return;
         }
+        const percentage = (completedTasks.length / tasks.length) * 100;
+        progressBar.style.width = percentage + '%';
+    }
 
-        function renderCalendar(data) {
-            let html = "";
-            data.months.forEach(m => {
-                html += `<h3>${m.title}</h3><div class="calendar-grid">`;
-                m.days.forEach(d => {
-                    const style = d.color === "#ff0000" || d.color === "red" ? "busy" : "";
-                    html += `<div class="day ${style}" title="${d.note || ''}">${d.day}</div>`;
-                });
-                html += `</div>`;
-            });
-            document.getElementById('app').innerHTML = html;
-        }
+    function addTask() {
+        const text = input.value.trim();
+        if (text === "") return;
 
-        window.onload = fetchData;
-    </script>
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <i class="fas fa-check-circle check-btn"></i>
+            <span class="task-text">${text}</span>
+            <i class="fas fa-trash del-btn"></i>
+        `;
+
+        // Sự kiện hoàn thành
+        li.querySelector('.check-btn').addEventListener('click', () => {
+            li.classList.toggle('completed');
+            updateProgress();
+        });
+
+        // Sự kiện xóa
+        li.querySelector('.del-btn').addEventListener('click', () => {
+            li.style.transform = 'translateX(20px)';
+            li.style.opacity = '0';
+            setTimeout(() => {
+                li.remove();
+                updateProgress();
+            }, 300);
+        });
+
+        taskList.appendChild(li);
+        input.value = "";
+        updateProgress();
+    }
+
+    addBtn.addEventListener('click', addTask);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addTask();
+    });
+</script>
+
 </body>
 </html>
