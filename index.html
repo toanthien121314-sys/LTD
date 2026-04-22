@@ -96,67 +96,73 @@
     const pendingList = document.getElementById('pending-list');
     const completedList = document.getElementById('completed-list');
 
-    // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
+    // DÁN URL WEB APP MỚI NHẤT CỦA BẠN VÀO ĐÂY
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyo0ZymAvLpcPWw1WwLa5NutNSu7U4n8eMcdVV11GG5pXNFEQknYoFzarLXnIFtYskx/exec";
 
+    // 1. Khởi tạo ngày hiện tại (đảm bảo không bị undefined)
     let selectedDate = new Date().toISOString().split('T')[0];
 
-    // Chọn ngày
+    // Hàm cập nhật dòng chữ hiển thị ngày trên giao diện
+    function updateDateDisplay(dateStr) {
+        const d = new Date(dateStr);
+        if (dateDisplay) {
+            dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        }
+    }
+
+    // Khởi tạo khi vừa mở trang
+    updateDateDisplay(selectedDate);
+
+    // 2. Xử lý khi nhấn nút "Hôm khác"
     document.getElementById('date-btn').onclick = () => dateInput.showPicker();
     dateInput.onchange = (e) => {
-        selectedDate = e.target.value;
-        const d = new Date(selectedDate);
-        dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        if (e.target.value) {
+            selectedDate = e.target.value;
+            updateDateDisplay(selectedDate);
+        }
     };
 
+    // 3. Hàm gửi dữ liệu lên Google Sheets
     async function postTaskToSheet(taskText, taskDate) {
-        const btn = document.getElementById('add-btn');
-        btn.disabled = true; // Chống bấm liên tục
+        const btnIcon = addBtn.querySelector('i');
+        btnIcon.className = 'fas fa-spinner fa-spin'; // Hiệu ứng xoay báo đang lưu
         
         try {
-            const response = await fetch("DÁN_URL_WEB_APP_MỚI_VÀO_ĐÂY", {
+            // Kiểm tra an toàn trước khi gửi
+            if (!taskDate || taskDate === "undefined") {
+                alert("Lỗi: Ngày tháng chưa được chọn!");
+                return;
+            }
+
+            await fetch(WEB_APP_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Thêm dòng này nếu bị lỗi bảo mật trình duyệt
+                mode: 'no-cors', // Chế độ này giúp tránh lỗi bảo mật khi chạy trên GitHub
                 body: JSON.stringify({
                     date: taskDate,
                     note: taskText
                 })
             });
             
-            // Vì dùng 'no-cors' ta không đọc được response, nên tạm thời hiện báo thành công
             alert("Đã gửi lệnh lưu cho ngày " + taskDate); 
-            
         } catch (error) {
             alert("Lỗi kết nối: " + error.message);
         } finally {
-            btn.disabled = false;
+            btnIcon.className = 'fas fa-plus';
         }
     }
 
+    // 4. Xử lý khi nhấn nút Thêm (+)
     async function addTask() {
         const val = input.value.trim();
-        const dateAtClick = selectedDate; 
-        if (val) {
-            pendingList.appendChild(createRow(val, false));
-            input.value = "";
-            updateStats();
-            // Gọi lệnh lưu
-            await postTaskToSheet(val, dateAtClick);
-        }
-    }
-
-    async function addTask() {
-        const val = input.value.trim();
-        // Chốt ngày hiện đang chọn ngay lúc này để gửi đi
-        const dateAtClick = selectedDate; 
+        const dateAtClick = selectedDate; // Chốt ngày ngay lúc bấm
 
         if (val) {
-            // 1. Hiển thị trên App cho nhanh
+            // Hiển thị lên App ngay lập tức
             pendingList.appendChild(createRow(val, false));
             input.value = "";
             updateStats();
             
-            // 2. Gửi lệnh lưu vào đúng ngày đã chốt lên Sheet
+            // Gửi dữ liệu về Sheet
             await postTaskToSheet(val, dateAtClick);
         }
     }
@@ -168,30 +174,14 @@
             <span class="task-text">${text}</span>
             <div class="del-btn"><i class="fas fa-trash-alt"></i></div>
         `;
-
         li.querySelector('.check-btn').onclick = () => {
             if (!isDone) completedList.appendChild(createRow(text, true));
             else pendingList.appendChild(createRow(text, false));
             li.remove();
             updateStats();
         };
-
         li.querySelector('.del-btn').onclick = () => { li.remove(); updateStats(); };
         return li;
-    }
-
-    async function addTask() {
-        const val = input.value.trim();
-        if (val) {
-            // 1. Hiển thị tạm thời trên giao diện App
-            pendingList.appendChild(createRow(val, false));
-            
-            // 2. Gửi dữ liệu thật lên Google Sheets
-            await postTaskToSheet(val);
-            
-            input.value = "";
-            updateStats();
-        }
     }
 
     function updateStats() {
@@ -208,6 +198,5 @@
     addBtn.onclick = addTask;
     input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
 </script>
-
 </body>
 </html>
