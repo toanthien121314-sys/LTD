@@ -37,23 +37,35 @@
             `).join('');
         }
 
-        async function saveTask() {
-            const data = {
-                action: "addOrUpdate",
-                id: document.getElementById('taskId').value,
-                date: document.getElementById('taskDate').value,
-                content: document.getElementById('taskContent').value
-            };
-            
-            document.getElementById('btnSave').innerText = "ĐANG LƯU...";
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
-            
-            // Reset form
-            document.getElementById('taskId').value = "";
-            document.getElementById('taskContent').value = "";
-            document.getElementById('btnSave').innerText = "LƯU CÔNG VIỆC";
-            loadTasks();
-        }
+async function saveTask() {
+    const content = document.getElementById('taskContent').value;
+    const date = document.getElementById('taskDate').value;
+    const id = document.getElementById('taskId').value;
+
+    if (!content || !date) return alert("Nhập đủ ngày và nội dung đã Thiện ơi!");
+
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.innerHTML = "ĐANG LƯU...";
+
+    const data = { action: "addOrUpdate", id, date, content };
+
+    // Dùng kỹ thuật gửi dữ liệu kiểu cũ (navigator.sendBeacon hoặc bỏ await) 
+    // để tránh bị treo do Google Script Redirect
+    fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Ép kiểu để bypass CORS
+        body: JSON.stringify(data)
+    }).then(() => {
+        // Vì no-cors không đọc được kết quả, ta giả định là thành công sau khi gửi
+        alert("Đã gửi yêu cầu! Đợi vài giây rồi tải lại trang nhé.");
+        location.reload(); 
+    }).catch(err => {
+        alert("Lỗi kết nối: " + err);
+        btn.disabled = false;
+        btn.innerHTML = "LƯU CÔNG VIỆC";
+    });
+}
 
         function editTask(id, date, content) {
             document.getElementById('taskId').value = id;
