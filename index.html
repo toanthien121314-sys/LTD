@@ -96,13 +96,11 @@
     const pendingList = document.getElementById('pending-list');
     const completedList = document.getElementById('completed-list');
 
-    // DÁN URL WEB APP MỚI NHẤT CỦA BẠN VÀO ĐÂY
+    // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyo0ZymAvLpcPWw1WwLa5NutNSu7U4n8eMcdVV11GG5pXNFEQknYoFzarLXnIFtYskx/exec";
 
-    // 1. Khởi tạo ngày hiện tại (đảm bảo không bị undefined)
     let selectedDate = new Date().toISOString().split('T')[0];
 
-    // Hàm cập nhật dòng chữ hiển thị ngày trên giao diện
     function updateDateDisplay(dateStr) {
         const d = new Date(dateStr);
         if (dateDisplay) {
@@ -110,10 +108,8 @@
         }
     }
 
-    // Khởi tạo khi vừa mở trang
     updateDateDisplay(selectedDate);
 
-    // 2. Xử lý khi nhấn nút "Hôm khác"
     document.getElementById('date-btn').onclick = () => dateInput.showPicker();
     dateInput.onchange = (e) => {
         if (e.target.value) {
@@ -122,47 +118,42 @@
         }
     };
 
-    // 3. Hàm gửi dữ liệu lên Google Sheets
+    // HÀM GỬI DỮ LIỆU SIÊU ỔN ĐỊNH
     async function postTaskToSheet(taskText, taskDate) {
         const btnIcon = addBtn.querySelector('i');
-        btnIcon.className = 'fas fa-spinner fa-spin'; // Hiệu ứng xoay báo đang lưu
+        btnIcon.className = 'fas fa-spinner fa-spin'; 
         
         try {
-            // Kiểm tra an toàn trước khi gửi
-            if (!taskDate || taskDate === "undefined") {
-                alert("Lỗi: Ngày tháng chưa được chọn!");
-                return;
-            }
-
+            // Gửi dữ liệu theo kiểu "Simple Request" để không bị chặn CORS
             await fetch(WEB_APP_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Chế độ này giúp tránh lỗi bảo mật khi chạy trên GitHub
+                mode: 'no-cors', // Chế độ không chặn
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     date: taskDate,
                     note: taskText
                 })
             });
             
-            alert("Đã gửi lệnh lưu cho ngày " + taskDate); 
+            // Hiện thông báo (Nếu dùng no-cors, alert sẽ hiện ngay sau khi gửi thành công)
+            alert("Đã gửi ghi chú: '" + taskText + "' cho ngày " + taskDate);
+            
         } catch (error) {
+            console.error("Lỗi:", error);
             alert("Lỗi kết nối: " + error.message);
         } finally {
             btnIcon.className = 'fas fa-plus';
         }
     }
 
-    // 4. Xử lý khi nhấn nút Thêm (+)
     async function addTask() {
         const val = input.value.trim();
-        const dateAtClick = selectedDate; // Chốt ngày ngay lúc bấm
+        const dateAtClick = selectedDate; 
 
         if (val) {
-            // Hiển thị lên App ngay lập tức
             pendingList.appendChild(createRow(val, false));
             input.value = "";
             updateStats();
-            
-            // Gửi dữ liệu về Sheet
             await postTaskToSheet(val, dateAtClick);
         }
     }
