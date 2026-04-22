@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meow Garden - To-do List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .garden-gradient { background: linear-gradient(135deg, #548235 0%, #2d5a27 100%); }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="garden-gradient text-white p-6 rounded-2xl shadow-lg mb-6">
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+            <i class="fas fa-leaf"></i> Meow Garden Tasks
+        </h1>
+        <p class="text-sm opacity-80 mt-1" id="currentDate"></p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
+        <div class="flex flex-col gap-3">
+            <input type="text" id="taskInput" placeholder="Bạn cần làm gì cho cây hôm nay?" 
+                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
+            <div class="flex gap-2 text-sm">
+                <input type="date" id="dateInput" class="px-3 py-2 border border-gray-200 rounded-lg">
+                <button onclick="addTask()" id="addBtn"
+                        class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl active:scale-95 transition-all">
+                    THÊM VIỆC
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-3" id="taskList">
+        <div class="text-center py-10 text-gray-400" id="loading">
+            <i class="fas fa-spinner fa-spin text-2xl"></i>
+            <p class="mt-2 text-sm">Đang đồng bộ với Google Sheets...</p>
+        </div>
+    </div>
+
+    <script>
+        // THAY LINK WEB APP CỦA BẠN VÀO ĐÂY
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxfWnZPJytnvxXFkbZpOcmYQhiXzwYC1eUp1PurJ4KRflDFlDS2C7Nxow_yzIRDOU-d/exec";
+
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('vi-VN', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        async function fetchTasks() {
+            try {
+                const res = await fetch(WEB_APP_URL + "?action=getTasks");
+                const data = await res.json();
+                renderTasks(data);
+            } catch (err) {
+                console.error("Lỗi:", err);
+                document.getElementById('loading').innerHTML = "Lỗi kết nối dữ liệu!";
+            }
+        }
+
+        function renderTasks(tasks) {
+            const list = document.getElementById('taskList');
+            const loading = document.getElementById('loading');
+            loading.style.display = 'none';
+            list.innerHTML = "";
+
+            if (tasks.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-400 mt-10">Hôm nay chưa có việc nào!</p>`;
+                return;
+            }
+
+            tasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <p class="font-medium text-gray-800">${task.content}</p>
+                        <p class="text-xs text-gray-400">${task.date}</p>
+                    </div>
+                    <i class="far fa-circle text-gray-300 text-xl"></i>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function addTask() {
+            const content = document.getElementById('taskInput').value;
+            const date = document.getElementById('dateInput').value;
+            const btn = document.getElementById('addBtn');
+
+            if (!content) return alert("Nhập nội dung đã Thiện ơi!");
+
+            btn.disabled = true;
+            btn.innerHTML = "ĐANG LƯU...";
+
+            try {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ action: "addTask", content, date })
+                });
+                document.getElementById('taskInput').value = "";
+                alert("Đã chèn vào Sheets thành công!");
+                fetchTasks();
+            } catch (err) {
+                alert("Lỗi khi gửi dữ liệu!");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "THÊM VIỆC";
+            }
+        }
+
+        // Tự động load khi mở trang
+        fetchTasks();
+    </script>
+</body>
+</html>
