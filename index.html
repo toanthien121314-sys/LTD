@@ -3,49 +3,58 @@
 <head>
     <title>Meow Garden Timeline</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS để tạo giao diện giống cái lịch trong ảnh của bạn */
-        .calendar-container { font-family: Arial; display: flex; flex-wrap: wrap; gap: 20px; }
-        .day-box { border: 1px solid #ccc; width: 40px; height: 40px; text-align: center; cursor: pointer; }
-        .day-box.busy { background-color: #ff4d4d; color: white; } /* Màu đỏ cho ngày bận */
-        .note-tooltip { display: none; position: absolute; background: #fff8dc; border: 1px solid orange; padding: 5px; }
+        body { font-family: sans-serif; padding: 20px; }
+        .error-msg { color: red; border: 1px solid red; padding: 10px; display: none; }
+        .loading { color: #666; }
+        /* Style cho các ô ngày giống trong Sheet của bạn */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 400px; }
+        .day { border: 1px solid #ddd; padding: 10px; text-align: center; background: #f9f9f9; cursor: pointer; }
+        .day.busy { background: #ff4d4d; color: white; }
     </style>
 </head>
 <body>
-    <h1>Lịch Trình Meow Garden</h1>
-    <div id="app" class="calendar-container">Đang tải dữ liệu từ Sheet...</div>
+    <h2>Lịch Trình Meow Garden</h2>
+    <div id="status" class="loading">Đang kết nối với Google Sheets...</div>
+    <div id="error" class="error-msg"></div>
+    <div id="app"></div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeel5crQikfdWcfbhnoJsgLCN0gZmBubmDoiBuTQTzBLvVog6YsM36i3Vnju8dK7dE/exec"; // Dán URL khi Deploy GAS vào đây
+        // THAY URL NÀY BẰNG URL WEB APP MỚI NHẤT CỦA BẠN
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeel5crQikfdWcfbhnoJsgLCN0gZmBubmDoiBuTQTzBLvVog6YsM36i3Vnju8dK7dE/exec"; 
 
-        // 1. CHIỀU ĐỌC: Lấy dữ liệu từ Sheet về hiển thị
-        async function loadTimeline() {
-            const response = await fetch(WEB_APP_URL);
-            const data = await response.json();
-            
+        async function fetchData() {
+            try {
+                const response = await fetch(WEB_APP_URL);
+                if (!response.ok) throw new Error("Không thể kết nối với Web App GAS.");
+                
+                const data = await response.json();
+                renderCalendar(data);
+                document.getElementById('status').style.display = 'none';
+            } catch (err) {
+                document.getElementById('status').style.display = 'none';
+                const errDiv = document.getElementById('error');
+                errDiv.style.display = 'block';
+                errDiv.innerText = "Lỗi: " + err.message + ". Hãy kiểm tra xem bạn đã Deploy GAS ở chế độ 'Anyone' chưa?";
+                console.error(err);
+            }
+        }
+
+        function renderCalendar(data) {
             let html = "";
-            data.months.forEach(month => {
-                html += `<div><h3>${month.title}</h3><div style="display:grid; grid-template-columns: repeat(7, 1fr);">`;
-                month.days.forEach(d => {
-                    const isBusy = d.color === "#ff0000" ? "busy" : "";
-                    html += `<div class="day-box ${isBusy}" onclick="openNote('${d.day}', '${d.note}')">${d.day}</div>`;
+            data.months.forEach(m => {
+                html += `<h3>${m.title}</h3><div class="calendar-grid">`;
+                m.days.forEach(d => {
+                    const style = d.color === "#ff0000" || d.color === "red" ? "busy" : "";
+                    html += `<div class="day ${style}" title="${d.note || ''}">${d.day}</div>`;
                 });
-                html += `</div></div>`;
+                html += `</div>`;
             });
-            document.getElementById("app").innerHTML = html;
+            document.getElementById('app').innerHTML = html;
         }
 
-        // 2. CHIỀU GHI: Gửi dữ liệu từ App về Sheet
-        function saveNote(date, noteText) {
-            fetch(WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ date: date, note: noteText }),
-            })
-            .then(res => res.json())
-            .then(result => alert("Đã lưu vào Sheet!"));
-        }
-
-        window.onload = loadTimeline;
+        window.onload = fetchData;
     </script>
 </body>
 </html>
