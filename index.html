@@ -1,80 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Meow Garden Timeline</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meow Garden To-do</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS để tạo giao diện giống cái lịch trong ảnh của bạn */
+        .calendar-container { font-family: Arial; display: flex; flex-wrap: wrap; gap: 20px; }
+        .day-box { border: 1px solid #ccc; width: 40px; height: 40px; text-align: center; cursor: pointer; }
+        .day-box.busy { background-color: #ff4d4d; color: white; } /* Màu đỏ cho ngày bận */
+        .note-tooltip { display: none; position: absolute; background: #fff8dc; border: 1px solid orange; padding: 5px; }
+    </style>
 </head>
-<body class="bg-gray-100 p-4">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
-        <h2 class="text-xl font-bold mb-4 text-green-700">Meow Garden To-do</h2>
-        
-        <input type="hidden" id="taskId">
-        <input type="date" id="taskDate" class="w-full border p-2 mb-2 rounded">
-        <textarea id="taskContent" placeholder="Việc cần làm..." class="w-full border p-2 mb-2 rounded"></textarea>
-        <button onclick="saveTask()" id="btnSave" class="w-full bg-green-600 text-white p-2 rounded font-bold">LƯU CÔNG VIỆC</button>
-        
-        <hr class="my-4">
-        <div id="listTasks" class="space-y-2"></div>
-    </div>
+<body>
+    <h1>Lịch Trình Meow Garden</h1>
+    <div id="app" class="calendar-container">Đang tải dữ liệu từ Sheet...</div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwh3AgfRvpl9mYZ1RbneeMxU3Aahh7OPPRIYZHyRKe_JLfZRrvGLUZbyA-4eNOkMhPu6w/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeel5crQikfdWcfbhnoJsgLCN0gZmBubmDoiBuTQTzBLvVog6YsM36i3Vnju8dK7dE/exec"; // Dán URL khi Deploy GAS vào đây
 
-        async function loadTasks() {
-            const res = await fetch(API_URL + "?action=getTasks");
-            const tasks = await res.json();
-            const container = document.getElementById('listTasks');
-            container.innerHTML = tasks.map(t => `
-                <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
-                    <div>
-                        <div class="text-xs text-gray-500">${t.date}</div>
-                        <div class="font-medium">${t.content}</div>
-                    </div>
-                    <button onclick="editTask('${t.id}', '${t.date}', '${t.content}')" class="text-blue-600">Sửa</button>
-                </div>
-            `).join('');
+        // 1. CHIỀU ĐỌC: Lấy dữ liệu từ Sheet về hiển thị
+        async function loadTimeline() {
+            const response = await fetch(WEB_APP_URL);
+            const data = await response.json();
+            
+            let html = "";
+            data.months.forEach(month => {
+                html += `<div><h3>${month.title}</h3><div style="display:grid; grid-template-columns: repeat(7, 1fr);">`;
+                month.days.forEach(d => {
+                    const isBusy = d.color === "#ff0000" ? "busy" : "";
+                    html += `<div class="day-box ${isBusy}" onclick="openNote('${d.day}', '${d.note}')">${d.day}</div>`;
+                });
+                html += `</div></div>`;
+            });
+            document.getElementById("app").innerHTML = html;
         }
 
-async function saveTask() {
-    const content = document.getElementById('taskContent').value;
-    const date = document.getElementById('taskDate').value;
-    const id = document.getElementById('taskId').value;
-
-    if (!content || !date) return alert("Nhập đủ ngày và nội dung đã Thiện ơi!");
-
-    const btn = document.getElementById('btnSave');
-    btn.disabled = true;
-    btn.innerHTML = "ĐANG LƯU...";
-
-    const data = { action: "addOrUpdate", id, date, content };
-
-    // Dùng kỹ thuật gửi dữ liệu kiểu cũ (navigator.sendBeacon hoặc bỏ await) 
-    // để tránh bị treo do Google Script Redirect
-    fetch(API_URL, {
-        method: 'POST',
-        mode: 'no-cors', // Ép kiểu để bypass CORS
-        body: JSON.stringify(data)
-    }).then(() => {
-        // Vì no-cors không đọc được kết quả, ta giả định là thành công sau khi gửi
-        alert("Đã gửi yêu cầu! Đợi vài giây rồi tải lại trang nhé.");
-        location.reload(); 
-    }).catch(err => {
-        alert("Lỗi kết nối: " + err);
-        btn.disabled = false;
-        btn.innerHTML = "LƯU CÔNG VIỆC";
-    });
-}
-
-        function editTask(id, date, content) {
-            document.getElementById('taskId').value = id;
-            document.getElementById('taskDate').value = date;
-            document.getElementById('taskContent').value = content;
-            window.scrollTo(0,0);
+        // 2. CHIỀU GHI: Gửi dữ liệu từ App về Sheet
+        function saveNote(date, noteText) {
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ date: date, note: noteText }),
+            })
+            .then(res => res.json())
+            .then(result => alert("Đã lưu vào Sheet!"));
         }
 
-        loadTasks();
+        window.onload = loadTimeline;
     </script>
 </body>
 </html>
