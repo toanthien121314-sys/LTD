@@ -19,6 +19,20 @@
         .container { background: var(--card-bg); width: 100%; max-width: 480px; padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); position: relative; }
         
         .date-picker-wrapper { position: absolute; top: 30px; right: 30px; text-align: right; }
+        
+        /* NÚT TẢI APP */
+        #install-btn { 
+            background: var(--primary-color); color: white; border: none; padding: 8px 12px; 
+            border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; 
+            margin-right: 5px; transition: 0.2s; animation: pulse 2s infinite; 
+        }
+        #install-btn:hover { background: #38c172; transform: scale(0.95); }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+
         #date-btn { background: #f0f4f8; border: none; padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
         #date-btn:hover { background: #e2e8f0; }
         #task-date-input { position: absolute; opacity: 0; pointer-events: none; }
@@ -35,16 +49,7 @@
         .section-title { font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #f0f4f8; padding-bottom: 5px; display: flex; justify-content: space-between; }
         ul { list-style: none; margin-bottom: 25px; min-height: 10px; }
         
-        /* HIỆU ỨNG MƯỢT MÀ CHO CÁC DÒNG (TRANSITION) */
-        li { 
-            background: #fff; padding: 12px 15px; border-radius: 14px; 
-            display: flex; align-items: center; gap: 12px; margin-bottom: 8px; 
-            border: 1px solid #f0f4f8; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Chuyển động mượt */
-            opacity: 1; transform: translateY(0) scale(1);
-        }
-        
-        /* Trạng thái ẩn để tạo hiệu ứng */
+        li { background: #fff; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border: 1px solid #f0f4f8; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 1; transform: translateY(0) scale(1); }
         li.fade-out { opacity: 0 !important; transform: scale(0.9) !important; pointer-events: none; }
         li.slide-out { opacity: 0 !important; transform: translateY(-10px) !important; pointer-events: none; }
         
@@ -58,7 +63,6 @@
         #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); opacity: 0.7; }
         #completed-list .check-btn { color: var(--primary-color); }
         
-        /* Chữ Đang tải tinh tế hơn */
         .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 10px; border: none !important; background: transparent !important; }
     </style>
 </head>
@@ -66,6 +70,7 @@
 
 <div class="container">
     <div class="date-picker-wrapper">
+        <button id="install-btn" style="display: none;"><i class="fas fa-download"></i> Tải App</button>
         <input type="date" id="task-date-input">
         <button id="date-btn"><i class="fas fa-calendar-alt"></i> Hôm khác</button>
     </div>
@@ -84,6 +89,32 @@
 </div>
 
 <script>
+    // --- LOGIC CÀI ĐẶT APP (PWA) ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = 'inline-block';
+    });
+
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+    });
+
+    // --- LOGIC GIAO DIỆN CHÍNH ---
     window.onload = function() {
         const input = document.getElementById('task-input');
         const addBtn = document.getElementById('add-btn');
@@ -92,7 +123,7 @@
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
 
-        // *** DÁN URL WEB APP CỦA BẠN VÀO DÒNG DƯỚI NÀY ***
+        // *** BẠN NHỚ DÁN URL WEB APP VÀO ĐÂY NHÉ ***
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzqGBjKk9B2RyZb81ArMmEOiHqmqdfgvTXZmmwYgrM3-07siXXG2Rbrf5pN65Vzxz4G/exec";
 
         let selectedDate = new Date().toISOString().split('T')[0];
@@ -113,10 +144,8 @@
             }
         };
 
-        // GỬI LÊN SERVER (Không gọi loadTasksFromServer nữa để tránh giật lag)
         async function postToServer(fullLineText, actionType) {
             try {
-                // Chạy ngầm tĩnh lặng, không làm phiền UI
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -125,26 +154,19 @@
                 });
             } catch (error) {
                 console.error("Lỗi đồng bộ ngầm");
-                // Tùy chọn: Nếu lỗi nặng có thể hiện thông báo nhỏ ở đây
             }
         }
 
-        // TẢI DỮ LIỆU KHI ĐỔI NGÀY
-// TẢI DỮ LIỆU KHI ĐỔI NGÀY
         async function loadTasksFromServer(date) {
-            // -- SỬA ĐOẠN NÀY --
             const loadingHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải dữ liệu...</li>";
             pendingList.innerHTML = loadingHTML;
-            completedList.innerHTML = loadingHTML; // Cho cả mục hoàn thành hiện loading
-            // ------------------
-
+            completedList.innerHTML = loadingHTML;
             try {
                 const response = await fetch(`${WEB_APP_URL}?date=${date}`);
                 const data = await response.json();
                 
-                // Xóa chữ đang tải đi khi có dữ liệu về
                 pendingList.innerHTML = "";
-                completedList.innerHTML = ""; 
+                completedList.innerHTML = "";
                 
                 if (data.note) {
                     data.note.split('\n').forEach(fullLine => {
@@ -160,15 +182,14 @@
                 updateStats();
             } catch (error) { 
                 pendingList.innerHTML = "<li class='loading-text'>Không thể tải dữ liệu</li>"; 
+                completedList.innerHTML = "";
             }
         }
 
-        // NÚT THÊM VIỆC (Mượt mà)
         async function addTask() {
             const val = input.value.trim();
             if (!val) return;
             
-            // Tạo hàng mới với trạng thái mờ (slide-out)
             const newRow = createRow(val, false);
             newRow.classList.add('slide-out'); 
             pendingList.appendChild(newRow); 
@@ -176,13 +197,11 @@
             input.value = "";
             updateStats();
 
-            // Kích hoạt hiệu ứng trượt vào
             setTimeout(() => { newRow.classList.remove('slide-out'); }, 10);
-            
-            await postToServer(val, 'add');
+            postToServer(val, 'add');
         }
 
-function createRow(fullLineText, isDone) {
+        function createRow(fullLineText, isDone) {
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
             const li = document.createElement('li');
             
@@ -192,7 +211,6 @@ function createRow(fullLineText, isDone) {
                 <div class="del-btn"><i class="fas fa-trash-alt"></i></div>
             `;
             
-            // XỬ LÝ CLICK TICK/BỎ TICK
             li.querySelector('.check-btn').onclick = () => {
                 li.classList.add('fade-out'); 
                 
@@ -201,28 +219,24 @@ function createRow(fullLineText, isDone) {
                         isDone = true;
                         completedList.appendChild(li);
                         li.querySelector('.check-btn i').className = 'fas fa-check-circle';
-                        postToServer(fullLineText, 'complete'); // Đã bỏ await để không block giao diện
+                        postToServer(fullLineText, 'complete'); 
                     } else {
                         isDone = false;
                         pendingList.appendChild(li);
                         li.querySelector('.check-btn i').className = 'far fa-circle';
-                        postToServer(fullLineText, 'uncomplete'); // Đã bỏ await
+                        postToServer(fullLineText, 'uncomplete'); 
                     }
                     updateStats();
-                    
-                    // Hiện lên lại ngay lập tức ở danh sách mới (rút ngắn thời gian)
                     setTimeout(() => { li.classList.remove('fade-out'); }, 10);
                 }, 300); 
             };
 
-            // BẤM XÓA
             li.querySelector('.del-btn').onclick = () => {
                 li.classList.add('fade-out');
-                
                 setTimeout(() => {
                     li.remove();
                     updateStats();
-                    postToServer(fullLineText, 'delete'); // Đã bỏ await
+                    postToServer(fullLineText, 'delete');
                 }, 300);
             };
             
@@ -230,7 +244,6 @@ function createRow(fullLineText, isDone) {
         }
 
         function updateStats() {
-            // Lọc ra các thẻ li không chứa chữ 'Đang tải'
             const pCount = Array.from(pendingList.children).filter(el => !el.classList.contains('loading-text')).length;
             document.getElementById('pending-count').innerText = pCount;
             document.getElementById('completed-count').innerText = completedList.children.length;
@@ -239,7 +252,6 @@ function createRow(fullLineText, isDone) {
         addBtn.onclick = addTask;
         input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
 
-        // Lần đầu mở App
         loadTasksFromServer(selectedDate);
     };
 </script>
