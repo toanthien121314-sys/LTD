@@ -19,27 +19,47 @@
         .container { background: var(--card-bg); width: 100%; max-width: 480px; padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); position: relative; }
         
         .date-picker-wrapper { position: absolute; top: 30px; right: 30px; text-align: right; }
-        #date-btn { background: #f0f4f8; border: none; padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        #date-btn { background: #f0f4f8; border: none; padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+        #date-btn:hover { background: #e2e8f0; }
         #task-date-input { position: absolute; opacity: 0; pointer-events: none; }
+        
         header h1 { color: var(--text-main); font-size: 1.8rem; margin-bottom: 5px; }
         #selected-date-display { font-size: 0.85rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
         
         .input-group { display: flex; gap: 10px; margin-bottom: 30px; }
-        input[type="text"] { flex: 1; padding: 14px 20px; border: 2px solid #edf2f7; border-radius: 15px; outline: none; font-size: 1rem; }
-        #add-btn { background: var(--primary-color); color: white; border: none; width: 50px; border-radius: 15px; cursor: pointer; font-size: 1.2rem; }
+        input[type="text"] { flex: 1; padding: 14px 20px; border: 2px solid #edf2f7; border-radius: 15px; outline: none; font-size: 1rem; transition: 0.3s; }
+        input[type="text"]:focus { border-color: var(--primary-color); }
+        #add-btn { background: var(--primary-color); color: white; border: none; width: 50px; border-radius: 15px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
+        #add-btn:active { transform: scale(0.9); }
         
-        .section-title { font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #f0f4f8; padding-bottom: 5px; }
-        ul { list-style: none; margin-bottom: 25px; min-height: 20px; }
-        li { background: #fff; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border: 1px solid #f0f4f8; }
+        .section-title { font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #f0f4f8; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        ul { list-style: none; margin-bottom: 25px; min-height: 10px; }
         
-        .check-btn { padding: 8px; cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; color: #cbd5e0; transition: 0.2s; }
-        .task-text { flex: 1; color: var(--text-main); font-size: 0.95rem; font-weight: 500; }
-        .del-btn { padding: 8px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; color: var(--danger-color); opacity: 0.8; }
-        .del-btn:hover { opacity: 1; }
+        /* HIỆU ỨNG MƯỢT MÀ CHO CÁC DÒNG (TRANSITION) */
+        li { 
+            background: #fff; padding: 12px 15px; border-radius: 14px; 
+            display: flex; align-items: center; gap: 12px; margin-bottom: 8px; 
+            border: 1px solid #f0f4f8; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Chuyển động mượt */
+            opacity: 1; transform: translateY(0) scale(1);
+        }
         
-        #completed-list li { opacity: 0.6; background: #fcfdfd; }
-        #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); }
+        /* Trạng thái ẩn để tạo hiệu ứng */
+        li.fade-out { opacity: 0 !important; transform: scale(0.9) !important; pointer-events: none; }
+        li.slide-out { opacity: 0 !important; transform: translateY(-10px) !important; pointer-events: none; }
+        
+        .check-btn { padding: 8px; cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; color: #cbd5e0; transition: 0.3s; }
+        .check-btn:hover { transform: scale(1.1); }
+        .task-text { flex: 1; color: var(--text-main); font-size: 0.95rem; font-weight: 500; transition: 0.3s; }
+        .del-btn { padding: 8px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; color: var(--danger-color); opacity: 0.5; transition: 0.3s; }
+        .del-btn:hover { opacity: 1; transform: scale(1.1); }
+        
+        #completed-list li { background: #fcfdfd; }
+        #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); opacity: 0.7; }
         #completed-list .check-btn { color: var(--primary-color); }
+        
+        /* Chữ Đang tải tinh tế hơn */
+        .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 10px; border: none !important; background: transparent !important; }
     </style>
 </head>
 <body>
@@ -84,6 +104,7 @@
         updateDateDisplay(selectedDate);
 
         document.getElementById('date-btn').onclick = () => dateInput.showPicker ? dateInput.showPicker() : dateInput.click();
+        
         dateInput.onchange = (e) => {
             if (e.target.value) {
                 selectedDate = e.target.value;
@@ -92,27 +113,25 @@
             }
         };
 
+        // GỬI LÊN SERVER (Không gọi loadTasksFromServer nữa để tránh giật lag)
         async function postToServer(fullLineText, actionType) {
-            const btnIcon = addBtn.querySelector('i');
-            btnIcon.className = 'fas fa-spinner fa-spin'; 
             try {
+                // Chạy ngầm tĩnh lặng, không làm phiền UI
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({ date: selectedDate, note: fullLineText, action: actionType })
                 });
-                // Tải lại sau 1.5s để đồng bộ với Sheet
-                setTimeout(() => loadTasksFromServer(selectedDate), 1500);
             } catch (error) {
-                alert("Lỗi kết nối");
-            } finally {
-                btnIcon.className = 'fas fa-plus';
+                console.error("Lỗi đồng bộ ngầm");
+                // Tùy chọn: Nếu lỗi nặng có thể hiện thông báo nhỏ ở đây
             }
         }
 
+        // TẢI DỮ LIỆU KHI ĐỔI NGÀY
         async function loadTasksFromServer(date) {
-            pendingList.innerHTML = "<li style='border:none;'>⌛ Đang tải...</li>";
+            pendingList.innerHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải dữ liệu...</li>";
             completedList.innerHTML = "";
             try {
                 const response = await fetch(`${WEB_APP_URL}?date=${date}`);
@@ -131,66 +150,88 @@
                     });
                 }
                 updateStats();
-            } catch (error) { pendingList.innerHTML = ""; }
+            } catch (error) { 
+                pendingList.innerHTML = "<li class='loading-text'>Không thể tải dữ liệu</li>"; 
+            }
         }
 
+        // NÚT THÊM VIỆC (Mượt mà)
         async function addTask() {
             const val = input.value.trim();
             if (!val) return;
-            pendingList.appendChild(createRow(val, false)); 
+            
+            // Tạo hàng mới với trạng thái mờ (slide-out)
+            const newRow = createRow(val, false);
+            newRow.classList.add('slide-out'); 
+            pendingList.appendChild(newRow); 
+            
             input.value = "";
             updateStats();
+
+            // Kích hoạt hiệu ứng trượt vào
+            setTimeout(() => { newRow.classList.remove('slide-out'); }, 10);
+            
             await postToServer(val, 'add');
         }
 
         function createRow(fullLineText, isDone) {
-            // Lọc thông minh: Bỏ dấu gạch, bỏ giờ (nếu là task cũ), bỏ chữ hoàn thành
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
-            
             const li = document.createElement('li');
+            
             li.innerHTML = `
                 <div class="check-btn"><i class="${isDone ? 'fas fa-check-circle' : 'far fa-circle'}"></i></div>
                 <span class="task-text">${cleanText}</span>
                 <div class="del-btn"><i class="fas fa-trash-alt"></i></div>
             `;
             
-            // XỬ LÝ CLICK VÀO NÚT TICK
+            // XỬ LÝ CLICK TICK/BỎ TICK (Hiệu ứng biến mất -> Xuất hiện)
             li.querySelector('.check-btn').onclick = async () => {
-                if (!isDone) {
-                    // Chuyển sang hoàn thành
-                    isDone = true;
-                    completedList.appendChild(li);
-                    li.querySelector('.check-btn i').className = 'fas fa-check-circle';
+                li.classList.add('fade-out'); // Làm mờ đi trước
+                
+                setTimeout(async () => {
+                    if (!isDone) {
+                        isDone = true;
+                        completedList.appendChild(li);
+                        li.querySelector('.check-btn i').className = 'fas fa-check-circle';
+                        await postToServer(fullLineText, 'complete');
+                    } else {
+                        isDone = false;
+                        pendingList.appendChild(li);
+                        li.querySelector('.check-btn i').className = 'far fa-circle';
+                        await postToServer(fullLineText, 'uncomplete');
+                    }
                     updateStats();
-                    await postToServer(fullLineText, 'complete');
-                } else {
-                    // Chuyển lại thành chưa hoàn thành
-                    isDone = false;
-                    pendingList.appendChild(li);
-                    li.querySelector('.check-btn i').className = 'far fa-circle';
-                    updateStats();
-                    await postToServer(fullLineText, 'uncomplete');
-                }
+                    
+                    // Hiện lên lại ở danh sách mới
+                    setTimeout(() => { li.classList.remove('fade-out'); }, 50);
+                }, 300); // Đợi 300ms cho css animation chạy xong
             };
 
-            // Bấm xóa
+            // BẤM XÓA (Thu nhỏ dần rồi biến mất)
             li.querySelector('.del-btn').onclick = async () => {
-                li.remove();
-                updateStats();
-                await postToServer(fullLineText, 'delete');
+                li.classList.add('fade-out');
+                
+                setTimeout(async () => {
+                    li.remove();
+                    updateStats();
+                    await postToServer(fullLineText, 'delete');
+                }, 300);
             };
             
             return li;
         }
 
         function updateStats() {
-            document.getElementById('pending-count').innerText = pendingList.children.length;
+            // Lọc ra các thẻ li không chứa chữ 'Đang tải'
+            const pCount = Array.from(pendingList.children).filter(el => !el.classList.contains('loading-text')).length;
+            document.getElementById('pending-count').innerText = pCount;
             document.getElementById('completed-count').innerText = completedList.children.length;
         }
 
         addBtn.onclick = addTask;
         input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
 
+        // Lần đầu mở App
         loadTasksFromServer(selectedDate);
     };
 </script>
