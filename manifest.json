@@ -1,19 +1,19 @@
 {
-  "name": "Meow Task",
-  "short_name": "Meow Task",
-  "description": "Ứng dụng quản lý công việc Meow Garden",
+  "name": "Bee girl",
+  "short_name": "Bee girl",
+  "description": "Ứng dụng quản lý công việc Meow",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f4f8",
   "theme_color": "#4ade80",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3069/3069172.png",
-      "sizes": "192x192",
+      "src": "./logo219.png",
+      "sizes": "219x219",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3069/3069172.png",
+      "src": "./logo512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
