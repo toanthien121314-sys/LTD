@@ -130,13 +130,21 @@
         }
 
         // TẢI DỮ LIỆU KHI ĐỔI NGÀY
+// TẢI DỮ LIỆU KHI ĐỔI NGÀY
         async function loadTasksFromServer(date) {
-            pendingList.innerHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải dữ liệu...</li>";
-            completedList.innerHTML = "";
+            // -- SỬA ĐOẠN NÀY --
+            const loadingHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải dữ liệu...</li>";
+            pendingList.innerHTML = loadingHTML;
+            completedList.innerHTML = loadingHTML; // Cho cả mục hoàn thành hiện loading
+            // ------------------
+
             try {
                 const response = await fetch(`${WEB_APP_URL}?date=${date}`);
                 const data = await response.json();
+                
+                // Xóa chữ đang tải đi khi có dữ liệu về
                 pendingList.innerHTML = "";
+                completedList.innerHTML = ""; 
                 
                 if (data.note) {
                     data.note.split('\n').forEach(fullLine => {
@@ -174,7 +182,7 @@
             await postToServer(val, 'add');
         }
 
-        function createRow(fullLineText, isDone) {
+function createRow(fullLineText, isDone) {
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
             const li = document.createElement('li');
             
@@ -184,37 +192,37 @@
                 <div class="del-btn"><i class="fas fa-trash-alt"></i></div>
             `;
             
-            // XỬ LÝ CLICK TICK/BỎ TICK (Hiệu ứng biến mất -> Xuất hiện)
-            li.querySelector('.check-btn').onclick = async () => {
-                li.classList.add('fade-out'); // Làm mờ đi trước
+            // XỬ LÝ CLICK TICK/BỎ TICK
+            li.querySelector('.check-btn').onclick = () => {
+                li.classList.add('fade-out'); 
                 
-                setTimeout(async () => {
+                setTimeout(() => {
                     if (!isDone) {
                         isDone = true;
                         completedList.appendChild(li);
                         li.querySelector('.check-btn i').className = 'fas fa-check-circle';
-                        await postToServer(fullLineText, 'complete');
+                        postToServer(fullLineText, 'complete'); // Đã bỏ await để không block giao diện
                     } else {
                         isDone = false;
                         pendingList.appendChild(li);
                         li.querySelector('.check-btn i').className = 'far fa-circle';
-                        await postToServer(fullLineText, 'uncomplete');
+                        postToServer(fullLineText, 'uncomplete'); // Đã bỏ await
                     }
                     updateStats();
                     
-                    // Hiện lên lại ở danh sách mới
-                    setTimeout(() => { li.classList.remove('fade-out'); }, 50);
-                }, 300); // Đợi 300ms cho css animation chạy xong
+                    // Hiện lên lại ngay lập tức ở danh sách mới (rút ngắn thời gian)
+                    setTimeout(() => { li.classList.remove('fade-out'); }, 10);
+                }, 300); 
             };
 
-            // BẤM XÓA (Thu nhỏ dần rồi biến mất)
-            li.querySelector('.del-btn').onclick = async () => {
+            // BẤM XÓA
+            li.querySelector('.del-btn').onclick = () => {
                 li.classList.add('fade-out');
                 
-                setTimeout(async () => {
+                setTimeout(() => {
                     li.remove();
                     updateStats();
-                    await postToServer(fullLineText, 'delete');
+                    postToServer(fullLineText, 'delete'); // Đã bỏ await
                 }, 300);
             };
             
