@@ -97,7 +97,7 @@
     const completedList = document.getElementById('completed-list');
 
     // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyEbty3HzBNF99QFX3QxB6l_QHgcc9slkLTdu46w9uMdzbIKrRIMhQcZXVcIg4ZN0N3/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzCWLxnd0kFeoxiZBIBWi9vMxNIu2FDCQvoa_oxJaVmoeQdc6MSZBxOWo9rvOkahDF3/exec";
 
     let selectedDate = new Date().toISOString().split('T')[0];
 
@@ -118,24 +118,22 @@
         }
     };
 
-    async function postTaskToSheet(taskText, taskDate) {
-    console.log("Đang gửi:", taskDate, taskText);
-    try {
-        await fetch(WEB_APP_URL, {
-            method: "POST",
-            mode: "no-cors", // Bắt buộc dùng no-cors để GitHub không bị chặn
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({
-                date: taskDate,
-                note: taskText
-            })
-        });
-        // Hiện thông báo để xác nhận nút bấm đã hoạt động
-        alert("Lệnh đã gửi: " + taskText + "\nNgày: " + taskDate);
-    } catch (e) {
-        alert("Lỗi kết nối: " + e.message);
+async function postTaskToSheet(taskText, taskDate) {
+        try {
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    date: taskDate,
+                    note: taskText
+                })
+            });
+            alert("Đã gửi yêu cầu lưu cho ngày: " + taskDate);
+        } catch (error) {
+            alert("Lỗi: " + error.message);
+        }
     }
-}
 
     async function addTask() {
         const val = input.value.trim();
