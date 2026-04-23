@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meow Garden Task</title>
+    <title>Bee girl</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4ade80">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -20,7 +24,7 @@
         
         .date-picker-wrapper { position: absolute; top: 30px; right: 30px; text-align: right; }
         
-        /* NÚT TẢI APP */
+        /* NÚT TẢI APP LẤP LÁNH */
         #install-btn { 
             background: var(--primary-color); color: white; border: none; padding: 8px 12px; 
             border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; 
@@ -63,7 +67,7 @@
         #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); opacity: 0.7; }
         #completed-list .check-btn { color: var(--primary-color); }
         
-        .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 10px; border: none !important; background: transparent !important; }
+        .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 10px; border: none !important; background: transparent !important; width: 100%; }
     </style>
 </head>
 <body>
@@ -75,7 +79,7 @@
         <button id="date-btn"><i class="fas fa-calendar-alt"></i> Hôm khác</button>
     </div>
     <header>
-        <h1>Meow Garden ✨</h1>
+        <h1>Bee girl 🐝</h1>
         <span id="selected-date-display">Ngày: --/--/----</span>
     </header>
     <div class="input-group">
@@ -93,10 +97,11 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Đã đăng ký Service Worker'))
-                .catch(err => console.log('Lỗi đăng ký SW: ', err));
+                .then(reg => console.log('SW Registered'))
+                .catch(err => console.log('SW Error: ', err));
         });
     }
+
     // --- LOGIC CÀI ĐẶT APP (PWA) ---
     let deferredPrompt;
     const installBtn = document.getElementById('install-btn');
@@ -111,9 +116,7 @@
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                installBtn.style.display = 'none';
-            }
+            if (outcome === 'accepted') installBtn.style.display = 'none';
             deferredPrompt = null;
         }
     });
@@ -131,7 +134,7 @@
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
 
-        // *** BẠN NHỚ DÁN URL WEB APP VÀO ĐÂY NHÉ ***
+        // *** DÁN URL WEB APP GOOGLE SCRIPT CỦA BẠN VÀO ĐÂY ***
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzqGBjKk9B2RyZb81ArMmEOiHqmqdfgvTXZmmwYgrM3-07siXXG2Rbrf5pN65Vzxz4G/exec";
 
         let selectedDate = new Date().toISOString().split('T')[0];
@@ -160,9 +163,7 @@
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({ date: selectedDate, note: fullLineText, action: actionType })
                 });
-            } catch (error) {
-                console.error("Lỗi đồng bộ ngầm");
-            }
+            } catch (error) { console.error("Sync Error"); }
         }
 
         async function loadTasksFromServer(date) {
@@ -172,7 +173,6 @@
             try {
                 const response = await fetch(`${WEB_APP_URL}?date=${date}`);
                 const data = await response.json();
-                
                 pendingList.innerHTML = "";
                 completedList.innerHTML = "";
                 
@@ -189,7 +189,7 @@
                 }
                 updateStats();
             } catch (error) { 
-                pendingList.innerHTML = "<li class='loading-text'>Không thể tải dữ liệu</li>"; 
+                pendingList.innerHTML = "<li class='loading-text'>Lỗi tải dữ liệu</li>"; 
                 completedList.innerHTML = "";
             }
         }
@@ -197,14 +197,11 @@
         async function addTask() {
             const val = input.value.trim();
             if (!val) return;
-            
             const newRow = createRow(val, false);
             newRow.classList.add('slide-out'); 
             pendingList.appendChild(newRow); 
-            
             input.value = "";
             updateStats();
-
             setTimeout(() => { newRow.classList.remove('slide-out'); }, 10);
             postToServer(val, 'add');
         }
@@ -212,7 +209,6 @@
         function createRow(fullLineText, isDone) {
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
             const li = document.createElement('li');
-            
             li.innerHTML = `
                 <div class="check-btn"><i class="${isDone ? 'fas fa-check-circle' : 'far fa-circle'}"></i></div>
                 <span class="task-text">${cleanText}</span>
@@ -221,7 +217,6 @@
             
             li.querySelector('.check-btn').onclick = () => {
                 li.classList.add('fade-out'); 
-                
                 setTimeout(() => {
                     if (!isDone) {
                         isDone = true;
@@ -247,7 +242,6 @@
                     postToServer(fullLineText, 'delete');
                 }, 300);
             };
-            
             return li;
         }
 
@@ -259,7 +253,6 @@
 
         addBtn.onclick = addTask;
         input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
-
         loadTasksFromServer(selectedDate);
     };
 </script>
