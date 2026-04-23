@@ -89,6 +89,14 @@
 </div>
 
 <script>
+    // --- ĐĂNG KÝ SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Đã đăng ký Service Worker'))
+                .catch(err => console.log('Lỗi đăng ký SW: ', err));
+        });
+    }
     // --- LOGIC CÀI ĐẶT APP (PWA) ---
     let deferredPrompt;
     const installBtn = document.getElementById('install-btn');
