@@ -1,7 +1,7 @@
 {
   "name": "Bee girl",
   "short_name": "Bee girl",
-  "description": "Ứng dụng quản lý công việc Meow",
+  "description": "Ứng dụng quản lý công việc Bee girl",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f4f8",
