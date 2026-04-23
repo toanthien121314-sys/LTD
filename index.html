@@ -8,7 +8,7 @@
     <style>
         :root {
             --primary-color: #4ade80;
-            --danger-color: #ff0000; /* Đỏ tươi cho thùng rác */
+            --danger-color: #ff0000;
             --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
             --card-bg: #ffffff;
             --text-main: #102a43;
@@ -18,30 +18,25 @@
         body { background: var(--bg-gradient); min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; }
         .container { background: var(--card-bg); width: 100%; max-width: 480px; padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); position: relative; }
         
-        /* Ngày tháng */
         .date-picker-wrapper { position: absolute; top: 30px; right: 30px; text-align: right; }
         #date-btn { background: #f0f4f8; border: none; padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
         #task-date-input { position: absolute; opacity: 0; pointer-events: none; }
         header h1 { color: var(--text-main); font-size: 1.8rem; margin-bottom: 5px; }
         #selected-date-display { font-size: 0.85rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
         
-        /* Nhập liệu */
         .input-group { display: flex; gap: 10px; margin-bottom: 30px; }
         input[type="text"] { flex: 1; padding: 14px 20px; border: 2px solid #edf2f7; border-radius: 15px; outline: none; font-size: 1rem; }
         #add-btn { background: var(--primary-color); color: white; border: none; width: 50px; border-radius: 15px; cursor: pointer; font-size: 1.2rem; }
         
-        /* Danh sách */
         .section-title { font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #f0f4f8; padding-bottom: 5px; }
         ul { list-style: none; margin-bottom: 25px; min-height: 20px; }
         li { background: #fff; padding: 12px 15px; border-radius: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border: 1px solid #f0f4f8; }
         
-        /* Nút Tương tác */
-        .check-btn { padding: 8px; cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; color: #cbd5e0; }
+        .check-btn { padding: 8px; cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; color: #cbd5e0; transition: 0.2s; }
         .task-text { flex: 1; color: var(--text-main); font-size: 0.95rem; font-weight: 500; }
         .del-btn { padding: 8px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; color: var(--danger-color); opacity: 0.8; }
         .del-btn:hover { opacity: 1; }
         
-        /* Style Đã hoàn thành */
         #completed-list li { opacity: 0.6; background: #fcfdfd; }
         #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); }
         #completed-list .check-btn { color: var(--primary-color); }
@@ -78,7 +73,7 @@
         const completedList = document.getElementById('completed-list');
 
         // *** DÁN URL WEB APP CỦA BẠN VÀO DÒNG DƯỚI NÀY ***
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymhOInzxTRuODne994gIQRjmVdXqZlfv2BYM-HtnB9i6sFPtDUPL0zVGC-Z5ebNJ4/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxB299VfcbFeSQ0BMdC8aszCmSnIZ_B09Q4fJXwUQv6eUAzgf1n3mDNsPEQ-B1Y5lJG/exec";
 
         let selectedDate = new Date().toISOString().split('T')[0];
 
@@ -97,7 +92,6 @@
             }
         };
 
-        // Gửi yêu cầu: add, delete, complete
         async function postToServer(fullLineText, actionType) {
             const btnIcon = addBtn.querySelector('i');
             btnIcon.className = 'fas fa-spinner fa-spin'; 
@@ -108,6 +102,7 @@
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({ date: selectedDate, note: fullLineText, action: actionType })
                 });
+                // Tải lại sau 1.5s để đồng bộ với Sheet
                 setTimeout(() => loadTasksFromServer(selectedDate), 1500);
             } catch (error) {
                 alert("Lỗi kết nối");
@@ -116,7 +111,6 @@
             }
         }
 
-        // Tải dữ liệu
         async function loadTasksFromServer(date) {
             pendingList.innerHTML = "<li style='border:none;'>⌛ Đang tải...</li>";
             completedList.innerHTML = "";
@@ -140,40 +134,46 @@
             } catch (error) { pendingList.innerHTML = ""; }
         }
 
-        // Nút Thêm việc
         async function addTask() {
             const val = input.value.trim();
             if (!val) return;
-            // Hiện tạm thời lên màn hình
             pendingList.appendChild(createRow(val, false)); 
             input.value = "";
             updateStats();
-            // Gửi lên server action: add
             await postToServer(val, 'add');
         }
 
         function createRow(fullLineText, isDone) {
-            const cleanText = fullLineText.replace(/^(\d{2}:\d{2}: )?- /, "").replace(" (hoàn thành)", "").trim();
-            const li = document.createElement('li');
+            // Lọc thông minh: Bỏ dấu gạch, bỏ giờ (nếu là task cũ), bỏ chữ hoàn thành
+            const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
             
-            // Icon vòng tròn rỗng (far fa-circle) hoặc dấu tick (fas fa-check-circle)
+            const li = document.createElement('li');
             li.innerHTML = `
                 <div class="check-btn"><i class="${isDone ? 'fas fa-check-circle' : 'far fa-circle'}"></i></div>
                 <span class="task-text">${cleanText}</span>
                 <div class="del-btn"><i class="fas fa-trash-alt"></i></div>
             `;
             
-            // Bấm tick (Hoàn thành)
+            // XỬ LÝ CLICK VÀO NÚT TICK
             li.querySelector('.check-btn').onclick = async () => {
                 if (!isDone) {
+                    // Chuyển sang hoàn thành
+                    isDone = true;
                     completedList.appendChild(li);
                     li.querySelector('.check-btn i').className = 'fas fa-check-circle';
                     updateStats();
                     await postToServer(fullLineText, 'complete');
+                } else {
+                    // Chuyển lại thành chưa hoàn thành
+                    isDone = false;
+                    pendingList.appendChild(li);
+                    li.querySelector('.check-btn i').className = 'far fa-circle';
+                    updateStats();
+                    await postToServer(fullLineText, 'uncomplete');
                 }
             };
 
-            // Bấm xóa (Thùng rác)
+            // Bấm xóa
             li.querySelector('.del-btn').onclick = async () => {
                 li.remove();
                 updateStats();
