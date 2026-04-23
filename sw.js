@@ -1,7 +1,9 @@
-const CACHE_NAME = 'meow-garden-v1';
+const CACHE_NAME = 'meow-garden-v2';
 const urlsToCache = [
   './',
   './index.html',
+  './logo219.png',
+  './logo512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
