@@ -97,53 +97,74 @@
     const completedList = document.getElementById('completed-list');
 
     // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzbvyLiPWPjp2PVAgJlh-K1nJynA9YgGr_Xz0oZtV5bk6-NfK7l9BWLb61CM3cWujUr/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzPJS8d1WfIpUsYFkEFvv0BeBf5xpuV8rlt6MxfWBmIQIhreR91U5qcyZTNt8S1T77E/exec";
 
     let selectedDate = new Date().toISOString().split('T')[0];
 
-    function updateDateDisplay(dateStr) {
-        const d = new Date(dateStr);
-        if (dateDisplay) {
-            dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    // 1. HÀM TẢI DỮ LIỆU TỪ SHEET VỀ APP
+    async function loadTasksFromServer(date) {
+        pendingList.innerHTML = "<li style='border:none; background:none; font-size:0.8rem;'>⌛ Đang tải dữ liệu từ Sheet...</li>";
+        completedList.innerHTML = "";
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}?date=${date}`);
+            const data = await response.json();
+            
+            pendingList.innerHTML = ""; // Xóa dòng chữ "Đang tải"
+            
+            if (data.note) {
+                // Tách các dòng trong ghi chú để tạo thành các việc cần làm
+                const tasks = data.note.split('\n');
+                tasks.forEach(taskText => {
+                    if (taskText.trim()) {
+                        // Hiển thị nội dung lên danh sách Đang thực hiện
+                        pendingList.appendChild(createRow(taskText.trim(), false));
+                    }
+                });
+            }
+            updateStats();
+        } catch (error) {
+            pendingList.innerHTML = "<li style='border:none; color:red;'>Lỗi tải dữ liệu</li>";
         }
     }
 
-    updateDateDisplay(selectedDate);
-
-    document.getElementById('date-btn').onclick = () => dateInput.showPicker();
-    dateInput.onchange = (e) => {
+    // 2. CẬP NHẬT KHI ĐỔI NGÀY
+    dateInput.onchange = async (e) => {
         if (e.target.value) {
             selectedDate = e.target.value;
-            updateDateDisplay(selectedDate);
+            const d = new Date(selectedDate);
+            dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+            
+            // QUAN TRỌNG: Gọi hàm tải dữ liệu mới
+            await loadTasksFromServer(selectedDate);
         }
     };
 
-async function postTaskToSheet(taskText, taskDate) {
+    // 3. HÀM GỬI DỮ LIỆU LÊN SHEET
+    async function postTaskToSheet(taskText, taskDate) {
+        const btnIcon = addBtn.querySelector('i');
+        btnIcon.className = 'fas fa-spinner fa-spin'; 
         try {
             await fetch(WEB_APP_URL, {
                 method: 'POST',
-                mode: 'no-cors', 
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    date: taskDate,
-                    note: taskText
-                })
+                body: JSON.stringify({ date: taskDate, note: taskText })
             });
-            alert("Đã gửi yêu cầu lưu cho ngày: " + taskDate);
+            // Tải lại dữ liệu sau khi lưu thành công để đồng bộ
+            setTimeout(() => loadTasksFromServer(taskDate), 1000);
         } catch (error) {
-            alert("Lỗi: " + error.message);
+            alert("Lỗi lưu dữ liệu!");
+        } finally {
+            btnIcon.className = 'fas fa-plus';
         }
     }
 
     async function addTask() {
         const val = input.value.trim();
-        const dateAtClick = selectedDate; 
-
         if (val) {
-            pendingList.appendChild(createRow(val, false));
             input.value = "";
-            updateStats();
-            await postTaskToSheet(val, dateAtClick);
+            await postTaskToSheet(val, selectedDate);
         }
     }
 
@@ -154,6 +175,7 @@ async function postTaskToSheet(taskText, taskDate) {
             <span class="task-text">${text}</span>
             <div class="del-btn"><i class="fas fa-trash-alt"></i></div>
         `;
+        // Logic Tick/Xóa giữ nguyên như cũ...
         li.querySelector('.check-btn').onclick = () => {
             if (!isDone) completedList.appendChild(createRow(text, true));
             else pendingList.appendChild(createRow(text, false));
@@ -177,6 +199,9 @@ async function postTaskToSheet(taskText, taskDate) {
 
     addBtn.onclick = addTask;
     input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
+
+    // TẢI DỮ LIỆU LẦN ĐẦU KHI MỞ APP
+    window.onload = () => loadTasksFromServer(selectedDate);
 </script>
 </body>
 </html>
