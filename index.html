@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bee girl</title>
+    <title>Bee boy</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#4ade80">
@@ -106,11 +106,11 @@
         <button id="date-btn"><i class="fas fa-calendar-alt"></i> Hôm khác</button>
     </div>
     <header>
-        <h1>Bee girl 🐝</h1>
+        <h1>Bee boy 🐝</h1>
         <span id="selected-date-display">Ngày: --/--/----</span>
     </header>
 <div class="input-group">
-        <input type="text" id="task-input" placeholder="Cưng muốn làm gì?" 
+        <input type="text" id="task-input" placeholder="Việc cần làm?" 
                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <button id="add-btn"><i class="fas fa-plus"></i></button>
     </div>
@@ -182,38 +182,46 @@
             } catch (error) { console.error("Error"); }
         }
 
-        async function loadTasksFromServer(date) {
-            const loadingHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
-            pendingList.innerHTML = loadingHTML;
-            completedList.innerHTML = loadingHTML;
-            try {
-                const response = await fetch(`${WEB_APP_URL}?date=${date}`);
-                const data = await response.json();
-                pendingList.innerHTML = "";
-                completedList.innerHTML = "";
-                if (data.note) {
-                    data.note.split('\n').forEach(line => {
-                        if (line.trim()) {
-                            if (line.includes("(hoàn thành)")) completedList.appendChild(createRow(line.trim(), true));
-                            else pendingList.appendChild(createRow(line.trim(), false));
-                        }
-                    });
-                }
-                updateStats();
-            } catch (error) { pendingList.innerHTML = "<li class='loading-text'>Lỗi tải dữ liệu</li>"; }
-        }
+async function loadTasksFromServer(date) {
+    // 1. Lấy dữ liệu từ bộ nhớ đệm ra trước
+    const cachedData = localStorage.getItem('bee_cache_' + date);
+    if (cachedData) {
+        renderTasks(cachedData); // Gọi hàm hiển thị dữ liệu (nên tách riêng hàm render)
+    } else {
+        pendingList.innerHTML = "<li class='loading-text'>Đang tải...</li>";
+    }
 
-        async function addTask() {
-            const val = input.value.trim();
-            if (!val) return;
-            const newRow = createRow(val, false);
-            newRow.classList.add('slide-out'); 
-            pendingList.appendChild(newRow); 
-            input.value = "";
-            updateStats();
-            setTimeout(() => { newRow.classList.remove('slide-out'); }, 10);
-            postToServer(val, 'add');
+    try {
+        const response = await fetch(`${WEB_APP_URL}?date=${date}`);
+        const data = await response.json();
+        const serverNote = data.note || "";
+
+        // 2. Chỉ vẽ lại giao diện nếu dữ liệu server khác với bản đệm
+        if (serverNote !== cachedData) {
+            localStorage.setItem('bee_cache_' + date, serverNote);
+            renderTasks(serverNote);
         }
+    } catch (error) {
+        console.log("Đang ngoại tuyến, dùng dữ liệu đệm.");
+    }
+}
+
+async function addTask() {
+    const val = input.value.trim();
+    if (!val) return;
+
+    // 1. Cập nhật bản đệm cục bộ ngay lập tức
+    const oldCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
+    const newCache = oldCache + (oldCache ? "\n" : "") + "- " + val;
+    localStorage.setItem('bee_cache_' + selectedDate, newCache);
+    
+    // 2. Hiển thị ngay lên màn hình
+    renderTasks(newCache);
+    input.value = "";
+
+    // 3. Gửi ngầm lên server
+    postToServer(val, 'add');
+}
 
         function createRow(fullLineText, isDone) {
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
