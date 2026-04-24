@@ -22,65 +22,38 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', -apple-system, sans-serif; }
         
         body { background: var(--bg-color); min-height: 100vh; display: flex; justify-content: center; padding: 0; }
-        
-        .container { 
-            background: var(--card-bg); 
-            width: 100%; 
-            max-width: 500px; 
-            padding: 30px 20px; 
-            position: relative;
-        }
+        .container { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px 20px; position: relative; }
         
         .date-picker-wrapper { position: absolute; top: 30px; right: 20px; text-align: right; }
-        
-        #install-btn { 
-            background: var(--primary-color); color: white; border: none; padding: 8px 12px; 
-            border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; 
-            margin-right: 5px; transition: 0.2s; animation: pulse 2s infinite; 
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
-        }
-
+        #install-btn { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-right: 5px; transition: 0.2s; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
         #date-btn { background: #f8fafc; border: 1px solid var(--border-light); padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
         #task-date-input { position: absolute; opacity: 0; pointer-events: none; }
         
         header h1 { color: var(--text-main); font-size: 2rem; margin-bottom: 5px; letter-spacing: -0.5px; }
-        #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 30px; display: block; }
+        #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
         
-        .input-group { display: flex; gap: 12px; margin-bottom: 35px; }
-        input[type="text"] { 
-            flex: 1; padding: 16px 20px; 
-            border: 1.5px solid var(--border-light); 
-            border-radius: 18px; outline: none; font-size: 1rem; 
-            transition: 0.3s; background: #fafafa;
-        }
-        input[type="text"]:focus { border-color: var(--primary-color); background: #fff; }
-        
-        #add-btn { 
-            background: var(--primary-color); color: white; border: none; 
-            width: 70px; border-radius: 18px; cursor: pointer; 
-            font-size: 1.8rem; transition: 0.2s; 
-            display: flex; align-items: center; justify-content: center;
-        }
+        /* STYLE CHO THANH CATEGORY (THẺ CÔNG VIỆC) */
+        #category-container { margin-bottom: 15px; }
+        #category-bar { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; align-items: center; }
+        #category-bar::-webkit-scrollbar { display: none; }
+        .cat-tag { padding: 6px 15px; border-radius: 20px; border: 1px solid #e2e8f0; background: #f8fafc; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .cat-tag.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .cat-tag .remove-tag { margin-left: 8px; font-size: 0.7rem; opacity: 0.7; }
+        #add-tag-btn { background: none; border: 1px dashed #cbd5e0; color: #94a3b8; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; }
+        .group-header { font-size: 0.75rem; color: var(--primary-color); font-weight: 800; margin: 15px 0 8px 5px; display: block; letter-spacing: 0.5px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; }
+
+        /* KHU VỰC NHẬP LIỆU */
+        .input-group { display: flex; gap: 12px; margin-bottom: 30px; }
+        input[type="text"] { flex: 1; padding: 16px 20px; border: 1.5px solid var(--border-light); border-radius: 18px; outline: none; font-size: 1rem; transition: 0.3s; background: #fafafa; }
+        input[type="text"]:focus { border-color: var(--primary-color); background: #fff; box-shadow: none; }
+        #add-btn { background: var(--primary-color); color: white; border: none; width: 70px; border-radius: 18px; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; }
         #add-btn:active { transform: scale(0.9); }
         
-        .section-title { 
-            font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); 
-            text-transform: uppercase; margin-bottom: 15px; 
-            border-bottom: 1px solid var(--border-light); 
-            padding-bottom: 8px; display: flex; justify-content: space-between; 
-        }
+        /* DANH SÁCH CÔNG VIỆC */
+        .section-title { font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; display: flex; justify-content: space-between; }
         ul { list-style: none; margin-bottom: 30px; }
-        
-        li { 
-            background: #fff; padding: 15px; border-radius: 16px; 
-            display: flex; align-items: center; gap: 15px; margin-bottom: 12px; 
-            border: 1.5px solid var(--border-light); 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        li { background: #fff; padding: 15px; border-radius: 16px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border: 1.5px solid var(--border-light); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         li.fade-out { opacity: 0 !important; transform: scale(0.9) !important; }
         
         .check-btn { padding: 5px; cursor: pointer; font-size: 1.4rem; color: #e2e8f0; transition: 0.3s; }
@@ -90,7 +63,6 @@
         #completed-list li { border-color: transparent; background: #fdfdfd; }
         #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); opacity: 0.6; }
         #completed-list .check-btn { color: var(--primary-color); }
-        
         .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px; border: none !important; width: 100%; }
     </style>
 </head>
@@ -106,11 +78,20 @@
         <h1>Bee boy 🐝</h1>
         <span id="selected-date-display">Ngày: --/--/----</span>
     </header>
+
+    <div id="category-container">
+        <div id="category-bar">
+            <div id="tag-list" style="display: flex; gap: 8px;"></div>
+            <button id="add-tag-btn"><i class="fas fa-plus"></i> Thêm mục</button>
+        </div>
+    </div>
+
     <div class="input-group">
         <input type="text" id="task-input" placeholder="Việc cần làm?" 
                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <button id="add-btn"><i class="fas fa-plus"></i></button>
     </div>
+
     <div class="section-title">Việc cần làm <span id="pending-count">0</span></div>
     <ul id="pending-list"></ul>
     <div class="section-title">Đã hoàn thành <span id="completed-count">0</span></div>
@@ -120,25 +101,13 @@
 <script>
     // --- PWA LOGIC ---
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
-        });
+        window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.log(err)));
     }
-
     let deferredPrompt;
     const installBtn = document.getElementById('install-btn');
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installBtn.style.display = 'inline-block';
-    });
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block'; });
     installBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') installBtn.style.display = 'none';
-            deferredPrompt = null;
-        }
+        if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; }
     });
 
     // --- MAIN LOGIC ---
@@ -154,99 +123,126 @@
 
         let selectedDate = new Date().toISOString().split('T')[0];
 
+        // --- QUẢN LÝ THẺ (CATEGORIES) ---
+        let categories = JSON.parse(localStorage.getItem('bee_categories')) || ["Chung", "Nhân sự", "Kế toán", "Quầy vé"];
+        let currentCat = "Chung";
+
+        function renderTagBar() {
+            const tagList = document.getElementById('tag-list');
+            tagList.innerHTML = "";
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `cat-tag ${currentCat === cat ? 'active' : ''}`;
+                btn.innerHTML = `${cat}${cat !== 'Chung' ? ' <i class="fas fa-times remove-tag"></i>' : ''}`;
+                btn.onclick = (e) => {
+                    if (e.target.classList.contains('remove-tag')) {
+                        categories = categories.filter(c => c !== cat);
+                        localStorage.setItem('bee_categories', JSON.stringify(categories));
+                        if (currentCat === cat) currentCat = "Chung";
+                        renderTagBar();
+                    } else {
+                        currentCat = cat;
+                        renderTagBar();
+                    }
+                };
+                tagList.appendChild(btn);
+            });
+        }
+        document.getElementById('add-tag-btn').onclick = () => {
+            const newCat = prompt("Nhập tên mục mới (VD: Kho, Giao hàng...):");
+            if (newCat && newCat.trim() && !categories.includes(newCat.trim())) {
+                categories.push(newCat.trim());
+                localStorage.setItem('bee_categories', JSON.stringify(categories));
+                renderTagBar();
+            }
+        };
+        renderTagBar();
+
+        // --- HÀM XỬ LÝ DỮ LIỆU & HIỂN THỊ ---
         function updateDateDisplay(dateStr) {
             const d = new Date(dateStr);
             dateDisplay.innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
-        updateDateDisplay(selectedDate);
-
-        document.getElementById('date-btn').onclick = () => dateInput.showPicker ? dateInput.showPicker() : dateInput.click();
         
-        dateInput.onchange = (e) => {
-            if (e.target.value) {
-                selectedDate = e.target.value;
-                updateDateDisplay(selectedDate);
-                loadTasksFromServer(selectedDate);
-            }
-        };
+        document.getElementById('date-btn').onclick = () => dateInput.showPicker ? dateInput.showPicker() : dateInput.click();
+        dateInput.onchange = (e) => { if (e.target.value) { selectedDate = e.target.value; updateDateDisplay(selectedDate); loadTasksFromServer(selectedDate); } };
 
-        // Hàm hỗ trợ vẽ dữ liệu ra giao diện
+        // Hàm gom nhóm và vẽ ra màn hình
         function renderTasks(noteText) {
-            pendingList.innerHTML = ""; 
-            completedList.innerHTML = "";
-            
-            if (!noteText) {
-                updateStats();
-                return;
-            }
+            pendingList.innerHTML = ""; completedList.innerHTML = "";
+            if (!noteText) { updateStats(); return; }
 
-            noteText.split('\n').forEach(fullLine => {
-                if (fullLine.trim()) {
-                    if (fullLine.includes("(hoàn thành)")) {
-                        completedList.appendChild(createRow(fullLine.trim(), true));
-                    } else {
-                        pendingList.appendChild(createRow(fullLine.trim(), false));
-                    }
+            const lines = noteText.split('\n');
+            const pGroups = {}; const cGroups = {};
+
+            // Phân loại công việc vào các nhóm thẻ
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const match = line.match(/^\[(.*?)\]/);
+                const catName = match ? match[1] : "Chung";
+                if (line.includes("(hoàn thành)")) {
+                    if (!cGroups[catName]) cGroups[catName] = [];
+                    cGroups[catName].push(line);
+                } else {
+                    if (!pGroups[catName]) pGroups[catName] = [];
+                    pGroups[catName].push(line);
                 }
             });
+
+            // Vẽ các nhóm chưa hoàn thành
+            for (let cat in pGroups) {
+                const header = document.createElement('span'); header.className = 'group-header'; header.innerText = cat.toUpperCase();
+                pendingList.appendChild(header);
+                pGroups[cat].forEach(line => pendingList.appendChild(createRow(line.trim(), false)));
+            }
+            // Vẽ các nhóm đã hoàn thành
+            for (let cat in cGroups) {
+                const header = document.createElement('span'); header.className = 'group-header'; header.innerText = cat.toUpperCase();
+                completedList.appendChild(header);
+                cGroups[cat].forEach(line => completedList.appendChild(createRow(line.trim(), true)));
+            }
             updateStats();
         }
 
         async function loadTasksFromServer(date) {
-            // 1. Lấy dữ liệu đệm hiện ra ngay lập tức
             const cachedData = localStorage.getItem('bee_cache_' + date);
-            if (cachedData) {
-                renderTasks(cachedData); 
-            } else {
-                pendingList.innerHTML = "<li class='loading-text'>Đang tải...</li>";
-            }
+            if (cachedData) renderTasks(cachedData); 
+            else pendingList.innerHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
 
             try {
-                // 2. Tải ngầm từ Server
                 const response = await fetch(`${WEB_APP_URL}?date=${date}`);
                 const data = await response.json();
                 const serverNote = data.note || "";
-
-                // 3. Nếu Server khác đệm thì mới vẽ lại
                 if (serverNote !== cachedData) {
                     localStorage.setItem('bee_cache_' + date, serverNote);
                     renderTasks(serverNote);
                 }
-            } catch (error) {
-                console.log("Ngoại tuyến, dùng dữ liệu đệm.");
-            }
+            } catch (error) { console.log("Ngoại tuyến, dùng dữ liệu đệm."); }
         }
 
         async function postToServer(fullLineText, actionType) {
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ date: selectedDate, note: fullLineText, action: actionType })
-                });
-            } catch (error) { console.error("Error"); }
+            try { await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ date: selectedDate, note: fullLineText, action: actionType }) }); } catch (error) {}
         }
 
         async function addTask() {
             const val = input.value.trim();
             if (!val) return;
 
-            // 1. Cập nhật đệm cục bộ
+            // Gắn thẻ nhóm đang chọn vào công việc
+            const taggedVal = currentCat === "Chung" ? val : `[${currentCat}] ${val}`;
+            
             const oldCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
-            const newCache = oldCache + (oldCache ? "\n" : "") + "- " + val;
+            const newCache = oldCache + (oldCache ? "\n" : "") + "- " + taggedVal;
             localStorage.setItem('bee_cache_' + selectedDate, newCache);
             
-            // 2. Vẽ lại giao diện ngay
             renderTasks(newCache);
             input.value = "";
-
-            // 3. Đồng bộ server
-            postToServer(val, 'add');
+            postToServer(taggedVal, 'add');
         }
 
         function createRow(fullLineText, isDone) {
-            const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
+            // Cắt bỏ thẻ [Mục] và chữ (hoàn thành) để hiển thị cho đẹp
+            const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/^\[.*?\]\s*/, "").replace(/\(hoàn thành\)$/, "").trim();
             const li = document.createElement('li');
             li.innerHTML = `
                 <div class="check-btn"><i class="${isDone ? 'fas fa-check-circle' : 'far fa-circle'}"></i></div>
@@ -257,42 +253,46 @@
             li.querySelector('.check-btn').onclick = () => {
                 li.classList.add('fade-out'); 
                 setTimeout(() => {
-                    if (!isDone) {
-                        isDone = true;
-                        completedList.appendChild(li);
-                        li.querySelector('.check-btn i').className = 'fas fa-check-circle';
-                        postToServer(fullLineText, 'complete'); 
-                    } else {
-                        isDone = false;
-                        pendingList.appendChild(li);
-                        li.querySelector('.check-btn i').className = 'far fa-circle';
-                        postToServer(fullLineText, 'uncomplete'); 
-                    }
-                    updateStats();
-                    setTimeout(() => { li.classList.remove('fade-out'); }, 10);
+                    const action = isDone ? 'uncomplete' : 'complete';
+                    postToServer(fullLineText, action); 
+                    
+                    // Cập nhật bộ đệm nội bộ để mượt mà
+                    let currentCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
+                    if(isDone) currentCache = currentCache.replace(fullLineText, fullLineText.replace(" (hoàn thành)", ""));
+                    else currentCache = currentCache.replace(fullLineText, fullLineText + " (hoàn thành)");
+                    
+                    localStorage.setItem('bee_cache_' + selectedDate, currentCache);
+                    renderTasks(currentCache);
                 }, 300); 
             };
 
             li.querySelector('.del-btn').onclick = () => {
                 li.classList.add('fade-out');
                 setTimeout(() => {
-                    li.remove();
-                    updateStats();
                     postToServer(fullLineText, 'delete');
+                    
+                    let currentCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
+                    let lines = currentCache.split('\n');
+                    currentCache = lines.filter(l => l.trim() !== fullLineText.trim()).join('\n');
+                    localStorage.setItem('bee_cache_' + selectedDate, currentCache);
+                    renderTasks(currentCache);
                 }, 300);
             };
             return li;
         }
 
         function updateStats() {
-            const pCount = Array.from(pendingList.children).filter(el => !el.classList.contains('loading-text')).length;
+            // Đếm số lượng <li>, bỏ đi các tiêu đề nhóm (span)
+            const pCount = pendingList.querySelectorAll('li:not(.loading-text)').length;
+            const cCount = completedList.querySelectorAll('li').length;
             document.getElementById('pending-count').innerText = pCount;
-            document.getElementById('completed-count').innerText = completedList.children.length;
+            document.getElementById('completed-count').innerText = cCount;
         }
 
         addBtn.onclick = addTask;
         input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
         
+        updateDateDisplay(selectedDate);
         loadTasksFromServer(selectedDate);
     };
 </script>
