@@ -149,7 +149,7 @@
             });
         }
         document.getElementById('add-tag-btn').onclick = () => {
-            const newCat = prompt("Nhập tên mục mới (VD: Kho, Giao hàng...):");
+            const newCat = prompt("Nhập thẻ phân loại mới (VD: Kế toán, Gia đình...):");
             if (newCat && newCat.trim() && !categories.includes(newCat.trim())) {
                 categories.push(newCat.trim());
                 localStorage.setItem('bee_categories', JSON.stringify(categories));
@@ -178,7 +178,7 @@
             // Phân loại công việc vào các nhóm thẻ
             lines.forEach(line => {
                 if (!line.trim()) return;
-                const match = line.match(/^\[(.*?)\]/);
+                const match = line.match(/\[(.*?)\]/);
                 const catName = match ? match[1] : "Chung";
                 if (line.includes("(hoàn thành)")) {
                     if (!cGroups[catName]) cGroups[catName] = [];
