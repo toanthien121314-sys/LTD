@@ -13,7 +13,7 @@
         :root {
             --primary-color: #4ade80;
             --danger-color: #ff0000;
-            --bg-color: #ffffff; /* Chuyển sang nền trắng thuần */
+            --bg-color: #ffffff;
             --card-bg: #ffffff;
             --text-main: #102a43;
             --text-secondary: #627d98;
@@ -50,7 +50,6 @@
         header h1 { color: var(--text-main); font-size: 2rem; margin-bottom: 5px; letter-spacing: -0.5px; }
         #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 30px; display: block; }
         
-        /* Nhập liệu tối ưu cho di động */
         .input-group { display: flex; gap: 12px; margin-bottom: 35px; }
         input[type="text"] { 
             flex: 1; padding: 16px 20px; 
@@ -60,7 +59,6 @@
         }
         input[type="text"]:focus { border-color: var(--primary-color); background: #fff; }
         
-        /* Nút + TO VÀ DỄ BẤM */
         #add-btn { 
             background: var(--primary-color); color: white; border: none; 
             width: 70px; border-radius: 18px; cursor: pointer; 
@@ -84,7 +82,6 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         li.fade-out { opacity: 0 !important; transform: scale(0.9) !important; }
-        li.slide-out { opacity: 0 !important; transform: translateY(-15px) !important; }
         
         .check-btn { padding: 5px; cursor: pointer; font-size: 1.4rem; color: #e2e8f0; transition: 0.3s; }
         .task-text { flex: 1; color: var(--text-main); font-size: 1rem; font-weight: 500; }
@@ -109,7 +106,7 @@
         <h1>Bee boy 🐝</h1>
         <span id="selected-date-display">Ngày: --/--/----</span>
     </header>
-<div class="input-group">
+    <div class="input-group">
         <input type="text" id="task-input" placeholder="Việc cần làm?" 
                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <button id="add-btn"><i class="fas fa-plus"></i></button>
@@ -121,6 +118,7 @@
 </div>
 
 <script>
+    // --- PWA LOGIC ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
@@ -143,6 +141,7 @@
         }
     });
 
+    // --- MAIN LOGIC ---
     window.onload = function() {
         const input = document.getElementById('task-input');
         const addBtn = document.getElementById('add-btn');
@@ -171,6 +170,53 @@
             }
         };
 
+        // Hàm hỗ trợ vẽ dữ liệu ra giao diện
+        function renderTasks(noteText) {
+            pendingList.innerHTML = ""; 
+            completedList.innerHTML = "";
+            
+            if (!noteText) {
+                updateStats();
+                return;
+            }
+
+            noteText.split('\n').forEach(fullLine => {
+                if (fullLine.trim()) {
+                    if (fullLine.includes("(hoàn thành)")) {
+                        completedList.appendChild(createRow(fullLine.trim(), true));
+                    } else {
+                        pendingList.appendChild(createRow(fullLine.trim(), false));
+                    }
+                }
+            });
+            updateStats();
+        }
+
+        async function loadTasksFromServer(date) {
+            // 1. Lấy dữ liệu đệm hiện ra ngay lập tức
+            const cachedData = localStorage.getItem('bee_cache_' + date);
+            if (cachedData) {
+                renderTasks(cachedData); 
+            } else {
+                pendingList.innerHTML = "<li class='loading-text'>Đang tải...</li>";
+            }
+
+            try {
+                // 2. Tải ngầm từ Server
+                const response = await fetch(`${WEB_APP_URL}?date=${date}`);
+                const data = await response.json();
+                const serverNote = data.note || "";
+
+                // 3. Nếu Server khác đệm thì mới vẽ lại
+                if (serverNote !== cachedData) {
+                    localStorage.setItem('bee_cache_' + date, serverNote);
+                    renderTasks(serverNote);
+                }
+            } catch (error) {
+                console.log("Ngoại tuyến, dùng dữ liệu đệm.");
+            }
+        }
+
         async function postToServer(fullLineText, actionType) {
             try {
                 await fetch(WEB_APP_URL, {
@@ -182,46 +228,22 @@
             } catch (error) { console.error("Error"); }
         }
 
-async function loadTasksFromServer(date) {
-    // 1. Lấy dữ liệu từ bộ nhớ đệm ra trước
-    const cachedData = localStorage.getItem('bee_cache_' + date);
-    if (cachedData) {
-        renderTasks(cachedData); // Gọi hàm hiển thị dữ liệu (nên tách riêng hàm render)
-    } else {
-        pendingList.innerHTML = "<li class='loading-text'>Đang tải...</li>";
-    }
+        async function addTask() {
+            const val = input.value.trim();
+            if (!val) return;
 
-    try {
-        const response = await fetch(`${WEB_APP_URL}?date=${date}`);
-        const data = await response.json();
-        const serverNote = data.note || "";
+            // 1. Cập nhật đệm cục bộ
+            const oldCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
+            const newCache = oldCache + (oldCache ? "\n" : "") + "- " + val;
+            localStorage.setItem('bee_cache_' + selectedDate, newCache);
+            
+            // 2. Vẽ lại giao diện ngay
+            renderTasks(newCache);
+            input.value = "";
 
-        // 2. Chỉ vẽ lại giao diện nếu dữ liệu server khác với bản đệm
-        if (serverNote !== cachedData) {
-            localStorage.setItem('bee_cache_' + date, serverNote);
-            renderTasks(serverNote);
+            // 3. Đồng bộ server
+            postToServer(val, 'add');
         }
-    } catch (error) {
-        console.log("Đang ngoại tuyến, dùng dữ liệu đệm.");
-    }
-}
-
-async function addTask() {
-    const val = input.value.trim();
-    if (!val) return;
-
-    // 1. Cập nhật bản đệm cục bộ ngay lập tức
-    const oldCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
-    const newCache = oldCache + (oldCache ? "\n" : "") + "- " + val;
-    localStorage.setItem('bee_cache_' + selectedDate, newCache);
-    
-    // 2. Hiển thị ngay lên màn hình
-    renderTasks(newCache);
-    input.value = "";
-
-    // 3. Gửi ngầm lên server
-    postToServer(val, 'add');
-}
 
         function createRow(fullLineText, isDone) {
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\(hoàn thành\)$/, "").trim();
@@ -270,6 +292,7 @@ async function addTask() {
 
         addBtn.onclick = addTask;
         input.onkeypress = (e) => { if (e.key === 'Enter') addTask(); };
+        
         loadTasksFromServer(selectedDate);
     };
 </script>
