@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bee-girl-v3';
+const CACHE_NAME = 'bee-boy-v4';
 const urlsToCache = [
   './',
   './index.html',
