@@ -4,28 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bee boy</title>
-    
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#4ade80">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         :root { --primary-color: #4ade80; --danger-color: #ff0000; --bg-color: #ffffff; --card-bg: #ffffff; --text-main: #102a43; --text-secondary: #627d98; --border-light: #f1f5f9; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', -apple-system, sans-serif; }
         
-        /* ĐÃ THÊM VÀO BODY: Khóa bôi đen chữ và khóa zoom khi gõ đúp ngón tay */
+        /* Chống zoom, chống bôi đen và CHỐNG PULL-TO-REFRESH của trình duyệt */
         body { 
             background: var(--bg-color); min-height: 100vh; display: flex; justify-content: center; padding: 0; 
-            -webkit-user-select: none; -ms-user-select: none; user-select: none; 
-            touch-action: manipulation; 
+            -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: manipulation;
+            overscroll-behavior-y: none; /* RẤT QUAN TRỌNG: Chặn vuốt tải lại trang của Chrome/Safari */
+            overflow: hidden; /* Khóa cuộn trang tổng để vuốt mượt hơn */
         }
         
-        .container { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px 20px; position: relative; }
+        .container { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px 20px; position: relative; height: 100vh; overflow-y: auto; }
+        
         .date-picker-wrapper { position: absolute; top: 30px; right: 20px; text-align: right; }
         #install-btn { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-right: 5px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
-        #date-btn { background: #f8fafc; border: 1px solid var(--border-light); padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
-        #task-date-input { position: absolute; opacity: 0; pointer-events: none; }
+        
+        /* Đổi nút chọn ngày cho hợp giao diện mới */
+        #date-btn { background: #f8fafc; border: 1px solid var(--border-light); padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+        #date-btn:active { transform: scale(0.95); background: #e2e8f0; }
+        
         header h1 { color: var(--text-main); font-size: 2rem; margin-bottom: 5px; letter-spacing: -0.5px; }
         #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
         
@@ -39,13 +42,7 @@
         .group-header { font-size: 0.75rem; color: var(--primary-color); font-weight: 800; margin: 15px 0 8px 5px; display: block; letter-spacing: 0.5px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; }
 
         .input-group { display: flex; gap: 12px; margin-bottom: 30px; }
-        
-        /* ĐÃ THÊM: Mở khóa lại tính năng quét bôi đen riêng cho ô nhập chữ để bạn có thể gõ/xóa dễ dàng */
-        input[type="text"] { 
-            flex: 1; padding: 16px 20px; border: 1.5px solid var(--border-light); border-radius: 18px; outline: none; font-size: 1rem; transition: 0.3s; background: #fafafa; 
-            -webkit-user-select: text; user-select: text; 
-        }
-        
+        input[type="text"] { flex: 1; padding: 16px 20px; border: 1.5px solid var(--border-light); border-radius: 18px; outline: none; font-size: 1rem; transition: 0.3s; background: #fafafa; -webkit-user-select: text; user-select: text; }
         input[type="text"]:focus { border-color: var(--primary-color); background: #fff; box-shadow: none; }
         #add-btn { background: var(--primary-color); color: white; border: none; width: 70px; border-radius: 18px; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         #add-btn:active { transform: scale(0.9); }
@@ -61,14 +58,44 @@
         #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); opacity: 0.6; }
         #completed-list .check-btn { color: var(--primary-color); }
         .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px; border: none !important; width: 100%; }
+
+        /* --- GIAO DIỆN LỊCH CUSTOM XỊN XÒ --- */
+        #custom-calendar-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(16, 42, 67, 0.4); backdrop-filter: blur(4px);
+            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            display: flex; justify-content: center; align-items: flex-start; padding-top: 20px;
+        }
+        #custom-calendar-overlay.show { opacity: 1; pointer-events: auto; }
+        
+        #custom-calendar {
+            background: #fff; width: 90%; max-width: 380px; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 20px;
+            transform: translateY(-120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #custom-calendar-overlay.show #custom-calendar { transform: translateY(0); }
+        
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .cal-header button { background: #f8fafc; border: none; width: 36px; height: 36px; border-radius: 12px; color: var(--text-main); font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
+        .cal-header button:active { background: #e2e8f0; transform: scale(0.9); }
+        .cal-header h3 { font-size: 1.1rem; color: var(--text-main); margin: 0; }
+        
+        .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; }
+        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .cal-day { aspect-ratio: 1; display: flex; justify-content: center; align-items: center; font-size: 0.95rem; color: var(--text-main); font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
+        .cal-day:hover { background: #f1f5f9; }
+        .cal-day.empty { pointer-events: none; }
+        .cal-day.today { color: var(--primary-color); background: rgba(74, 222, 128, 0.1); }
+        .cal-day.selected { background: var(--primary-color); color: white; box-shadow: 0 4px 10px rgba(74, 222, 128, 0.4); }
+        
+        .cal-swipe-hint { text-align: center; font-size: 0.75rem; color: #cbd5e0; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="app-container">
     <div class="date-picker-wrapper">
         <button id="install-btn" style="display: none;"><i class="fas fa-download"></i> Tải App</button>
-        <input type="date" id="task-date-input">
         <button id="date-btn"><i class="fas fa-calendar-alt"></i> Hôm khác</button>
     </div>
     <header>
@@ -92,6 +119,21 @@
     <ul id="pending-list"></ul>
     <div class="section-title">Đã hoàn thành <span id="completed-count">0</span></div>
     <ul id="completed-list"></ul>
+
+    <div id="custom-calendar-overlay">
+        <div id="custom-calendar">
+            <div class="cal-header">
+                <button id="cal-prev"><i class="fas fa-chevron-left"></i></button>
+                <h3 id="cal-title">Tháng --, ----</h3>
+                <button id="cal-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="cal-weekdays">
+                <span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span>
+            </div>
+            <div class="cal-days" id="cal-grid"></div>
+            <div class="cal-swipe-hint"><i class="fas fa-chevron-up"></i> Vuốt lên để đóng</div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -106,7 +148,7 @@
         const completedList = document.getElementById('completed-list');
 
         // *** ĐIỀN LẠI URL WEB APP CỦA BẠN VÀO ĐÂY ***
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3XvfedVrHD0AY3fiIv2brR_GlEKPlJp-WVzbHyvmw7sqn4H9UHJ7JUNZVLPljs8L7/exec";
+        const WEB_APP_URL = "URL_CỦA_BẠN_VÀO_ĐÂY";
 
         let selectedDate = new Date().toISOString().split('T')[0];
 
@@ -130,12 +172,9 @@
                         categories = categories.filter(c => c !== cat);
                         localStorage.setItem('bee_categories', JSON.stringify(categories));
                         if (currentCat === cat) { currentCat = "Chung"; localStorage.setItem('bee_current_cat', "Chung"); }
-                        renderTagBar();
-                        syncCategoriesToServer(); // Đẩy lên Google Script
+                        renderTagBar(); syncCategoriesToServer();
                     } else {
-                        currentCat = cat;
-                        localStorage.setItem('bee_current_cat', cat); // Nhớ mục đang chọn
-                        renderTagBar();
+                        currentCat = cat; localStorage.setItem('bee_current_cat', cat); renderTagBar();
                     }
                 };
                 tagList.appendChild(btn);
@@ -147,8 +186,7 @@
             if (newCat && newCat.trim() && !categories.includes(newCat.trim())) {
                 categories.push(newCat.trim());
                 localStorage.setItem('bee_categories', JSON.stringify(categories));
-                renderTagBar();
-                syncCategoriesToServer(); // Đẩy lên Google Script
+                renderTagBar(); syncCategoriesToServer();
             }
         };
         renderTagBar();
@@ -158,9 +196,63 @@
             document.getElementById('selected-date-display').innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
         
-        document.getElementById('date-btn').onclick = () => document.getElementById('task-date-input').showPicker();
-        document.getElementById('task-date-input').onchange = (e) => { if (e.target.value) { selectedDate = e.target.value; updateDateDisplay(selectedDate); loadTasksFromServer(selectedDate); } };
+        // --- LOGIC LỊCH CUSTOM XỊN XÒ ---
+        const calOverlay = document.getElementById('custom-calendar-overlay');
+        const calGrid = document.getElementById('cal-grid');
+        const calTitle = document.getElementById('cal-title');
+        let calCurrentMonth = new Date(selectedDate);
 
+        function renderCalendar() {
+            calGrid.innerHTML = "";
+            const year = calCurrentMonth.getFullYear();
+            const month = calCurrentMonth.getMonth();
+            calTitle.innerText = `Tháng ${month + 1}, ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = "cal-day empty";
+                calGrid.appendChild(emptyDiv);
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDiv = document.createElement('div');
+                const thisDateObj = new Date(year, month, i);
+                thisDateObj.setMinutes(thisDateObj.getMinutes() - thisDateObj.getTimezoneOffset());
+                const thisDateStr = thisDateObj.toISOString().split('T')[0];
+
+                dayDiv.className = "cal-day";
+                dayDiv.innerText = i;
+                
+                if (thisDateStr === todayStr) dayDiv.classList.add('today');
+                if (thisDateStr === selectedDate) dayDiv.classList.add('selected');
+
+                dayDiv.onclick = () => {
+                    selectedDate = thisDateStr;
+                    updateDateDisplay(selectedDate);
+                    loadTasksFromServer(selectedDate);
+                    closeCalendar();
+                };
+                calGrid.appendChild(dayDiv);
+            }
+        }
+
+        function openCalendar() {
+            calCurrentMonth = new Date(selectedDate);
+            renderCalendar();
+            calOverlay.classList.add('show');
+        }
+        function closeCalendar() { calOverlay.classList.remove('show'); }
+
+        document.getElementById('date-btn').onclick = openCalendar;
+        calOverlay.onclick = (e) => { if (e.target === calOverlay) closeCalendar(); };
+        document.getElementById('cal-prev').onclick = () => { calCurrentMonth.setMonth(calCurrentMonth.getMonth() - 1); renderCalendar(); };
+        document.getElementById('cal-next').onclick = () => { calCurrentMonth.setMonth(calCurrentMonth.getMonth() + 1); renderCalendar(); };
+
+        // --- RENDER DỮ LIỆU ---
         function renderTasks(noteText) {
             pendingList.innerHTML = ""; completedList.innerHTML = "";
             if (!noteText) return updateStats();
@@ -170,7 +262,7 @@
 
             lines.forEach(line => {
                 if (!line.trim()) return;
-                const match = line.match(/\[(.*?)\]/); // Đã bỏ dấu ^ để tìm thẻ chính xác
+                const match = line.match(/\[(.*?)\]/);
                 const catName = match ? match[1] : "Chung";
                 if (line.includes("(hoàn thành)")) {
                     if (!cGroups[catName]) cGroups[catName] = [];
@@ -194,21 +286,14 @@
             updateStats();
         }
 
-async function loadTasksFromServer(date) {
+        async function loadTasksFromServer(date) {
             const cachedData = localStorage.getItem('bee_cache_' + date);
-            
-            if (cachedData) {
-                renderTasks(cachedData); 
-            } else {
-                // 1. Ẩn công việc của ngày cũ và hiển thị trạng thái "Đang tải" cho CẢ 2 MỤC
+            if (cachedData) { renderTasks(cachedData); } 
+            else {
                 const loadingHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
-                pendingList.innerHTML = loadingHTML;
-                completedList.innerHTML = loadingHTML;
-
-                // 2. Thay số lượng đếm bằng hiệu ứng vòng xoay tải dữ liệu
+                pendingList.innerHTML = loadingHTML; completedList.innerHTML = loadingHTML;
                 const spinner = "<i class='fas fa-circle-notch fa-spin' style='font-size: 0.8rem; color: var(--primary-color);'></i>";
-                document.getElementById('pending-count').innerHTML = spinner;
-                document.getElementById('completed-count').innerHTML = spinner;
+                document.getElementById('pending-count').innerHTML = spinner; document.getElementById('completed-count').innerHTML = spinner;
             }
 
             try {
@@ -216,20 +301,14 @@ async function loadTasksFromServer(date) {
                 const data = await response.json();
                 
                 if (data.categories) {
-                    categories = data.categories;
-                    localStorage.setItem('bee_categories', JSON.stringify(categories));
-                    renderTagBar();
+                    categories = data.categories; localStorage.setItem('bee_categories', JSON.stringify(categories)); renderTagBar();
                 }
 
                 const serverNote = data.note || "";
-                // Nếu chưa có cache, hoặc dữ liệu server khác cache thì mới vẽ lại
                 if (!cachedData || serverNote !== cachedData) {
-                    localStorage.setItem('bee_cache_' + date, serverNote);
-                    renderTasks(serverNote);
+                    localStorage.setItem('bee_cache_' + date, serverNote); renderTasks(serverNote);
                 }
-            } catch (error) {
-                console.log("Ngoại tuyến");
-            }
+            } catch (error) {}
         }
 
         async function postToServer(fullLineText, actionType) {
@@ -245,9 +324,7 @@ async function loadTasksFromServer(date) {
             const newCache = oldCache + (oldCache ? "\n" : "") + "- " + taggedVal;
             localStorage.setItem('bee_cache_' + selectedDate, newCache);
             
-            renderTasks(newCache);
-            input.value = "";
-            postToServer(taggedVal, 'add');
+            renderTasks(newCache); input.value = ""; postToServer(taggedVal, 'add');
         };
         input.onkeypress = (e) => { if (e.key === 'Enter') document.getElementById('add-btn').click(); };
 
@@ -259,13 +336,10 @@ async function loadTasksFromServer(date) {
             li.querySelector('.check-btn').onclick = () => {
                 li.classList.add('fade-out'); 
                 setTimeout(() => {
-                    const action = isDone ? 'uncomplete' : 'complete';
-                    postToServer(fullLineText, action); 
-                    
+                    postToServer(fullLineText, isDone ? 'uncomplete' : 'complete'); 
                     let currentCache = localStorage.getItem('bee_cache_' + selectedDate) || "";
                     if(isDone) currentCache = currentCache.replace(fullLineText, fullLineText.replace(" (hoàn thành)", ""));
                     else currentCache = currentCache.replace(fullLineText, fullLineText + " (hoàn thành)");
-                    
                     localStorage.setItem('bee_cache_' + selectedDate, currentCache);
                     renderTasks(currentCache);
                 }, 300); 
@@ -284,63 +358,53 @@ async function loadTasksFromServer(date) {
             return li;
         }
 
-function updateStats() {
-            // Đảm bảo loại trừ các dòng chữ "Đang tải..." (.loading-text) để đếm chính xác số việc
+        function updateStats() {
             document.getElementById('pending-count').innerText = pendingList.querySelectorAll('li:not(.loading-text)').length;
             document.getElementById('completed-count').innerText = completedList.querySelectorAll('li:not(.loading-text)').length;
         }
-        // --- TÍNH NĂNG VUỐT (SWIPE) CHUYỂN NGÀY ---
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
 
-        const swipeZone = document.querySelector('.container');
+        // --- TÍNH NĂNG VUỐT THÔNG MINH ---
+        let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0;
+        const appContainer = document.getElementById('app-container');
 
-        swipeZone.addEventListener('touchstart', function(event) {
+        appContainer.addEventListener('touchstart', function(event) {
             touchStartX = event.changedTouches[0].screenX;
             touchStartY = event.changedTouches[0].screenY;
-        }, false);
+        }, {passive: true});
 
-        swipeZone.addEventListener('touchend', function(event) {
+        appContainer.addEventListener('touchend', function(event) {
             touchEndX = event.changedTouches[0].screenX;
             touchEndY = event.changedTouches[0].screenY;
             handleSwipe();
-        }, false);
+        }, {passive: true});
 
         function handleSwipe() {
             const diffX = touchEndX - touchStartX;
             const diffY = touchEndY - touchStartY;
-            const threshold = 60; // Khoảng cách vuốt tối thiểu (pixel) để tránh chạm nhầm
+            const threshold = 60;
 
-            // Kiểm tra xem người dùng vuốt ngang nhiều hơn vuốt dọc (tránh nhầm với cuộn trang lên/xuống)
             if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > threshold) {
-                
-                // Lấy ngày hiện tại và tính toán
+                // Vuốt Ngang (Đổi ngày)
                 let currentDateObj = new Date(selectedDate);
-
-                if (diffX > 0) {
-                    // Vuốt sang phải (từ trái sang phải) => Trở về hôm trước
-                    currentDateObj.setDate(currentDateObj.getDate() - 1);
-                } else {
-                    // Vuốt sang trái (từ phải sang trái) => Tiến tới hôm sau
-                    currentDateObj.setDate(currentDateObj.getDate() + 1);
-                }
-
-                // Cập nhật lại ngày vào hệ thống
-                // Lưu ý: bù đắp múi giờ để tránh lỗi lùi ngày khi dùng toISOString()
+                if (diffX > 0) currentDateObj.setDate(currentDateObj.getDate() - 1);
+                else currentDateObj.setDate(currentDateObj.getDate() + 1);
+                
                 currentDateObj.setMinutes(currentDateObj.getMinutes() - currentDateObj.getTimezoneOffset());
                 selectedDate = currentDateObj.toISOString().split('T')[0];
-                
-                // Đồng bộ với thẻ input ẩn
-                document.getElementById('task-date-input').value = selectedDate;
-
-                // Cập nhật giao diện và tải dữ liệu mới
                 updateDateDisplay(selectedDate);
                 loadTasksFromServer(selectedDate);
+            } 
+            else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > threshold) {
+                // Vuốt Dọc
+                if (diffY > 0 && appContainer.scrollTop === 0) {
+                    // Kéo từ trên xuống (Chỉ mở lịch khi đang cuộn ở tuốt trên cùng màn hình)
+                    openCalendar();
+                } else if (diffY < 0 && calOverlay.classList.contains('show')) {
+                    // Vuốt lên khi lịch đang mở -> Đóng lịch
+                    closeCalendar();
+                }
             }
         }
-        // --- KẾT THÚC PHẦN VUỐT CHUYỂN NGÀY ---
 
         updateDateDisplay(selectedDate);
         loadTasksFromServer(selectedDate);
