@@ -197,7 +197,26 @@
             const d = new Date(dateStr);
             document.getElementById('selected-date-display').innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
-        
+        // --- HÀM TỰ ĐỘNG DỌN DẸP BỘ NHỚ CŨ (Chèn vào đây) ---
+        function autoCleanupOldCache() {
+            const daysToKeep = 15; // Giữ lại 15 ngày gần nhất
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+            const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+            let count = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('bee_cache_')) {
+                    const datePart = key.replace('bee_cache_', '');
+                    if (datePart < cutoffStr) {
+                        localStorage.removeItem(key);
+                        count++;
+                    }
+                }
+            }
+            if (count > 0) console.log("Đã dọn dẹp bộ nhớ cũ.");
+        }
         // --- LOGIC LỊCH CUSTOM XỊN XÒ ---
         const calOverlay = document.getElementById('custom-calendar-overlay');
         const calGrid = document.getElementById('cal-grid');
@@ -408,8 +427,6 @@
             }
         }
 
-        updateDateDisplay(selectedDate);
-        loadTasksFromServer(selectedDate);
         // --- TÍNH NĂNG TẢI NGẦM (PRELOAD) 30 NGÀY ---
         async function preload30DaysBackground() {
             const today = new Date();
@@ -450,6 +467,10 @@
             localStorage.setItem('bee_last_preload_date', todayStr);
             console.log("Hoàn tất chu trình tải ngầm!");
         }
+        // Chạy các lệnh khởi động App
+        autoCleanupOldCache(); // 1. Dọn rác cũ
+        updateDateDisplay(selectedDate); // 2. Hiện ngày hiện tại
+        loadTasksFromServer(selectedDate); // 3. Tải dữ liệu
 
         // Đợi 3 giây sau khi App khởi động xong các giao diện chính mới bắt đầu chạy ngầm cho nhẹ máy
         setTimeout(preload30DaysBackground, 3000);
