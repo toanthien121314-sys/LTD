@@ -179,16 +179,27 @@
             updateStats();
         }
 
-        async function loadTasksFromServer(date) {
+async function loadTasksFromServer(date) {
             const cachedData = localStorage.getItem('bee_cache_' + date);
-            if (cachedData) renderTasks(cachedData); 
-            else pendingList.innerHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
+            
+            if (cachedData) {
+                renderTasks(cachedData); 
+            } else {
+                // 1. Ẩn công việc của ngày cũ và hiển thị trạng thái "Đang tải" cho CẢ 2 MỤC
+                const loadingHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
+                pendingList.innerHTML = loadingHTML;
+                completedList.innerHTML = loadingHTML;
+
+                // 2. Thay số lượng đếm bằng hiệu ứng vòng xoay tải dữ liệu
+                const spinner = "<i class='fas fa-circle-notch fa-spin' style='font-size: 0.8rem; color: var(--primary-color);'></i>";
+                document.getElementById('pending-count').innerHTML = spinner;
+                document.getElementById('completed-count').innerHTML = spinner;
+            }
 
             try {
                 const response = await fetch(`${WEB_APP_URL}?date=${date}`);
                 const data = await response.json();
                 
-                // KIỂM TRA: LẤY THẺ TỪ GOOGLE SHEET VỀ MÁY (Trường hợp đổi đt)
                 if (data.categories) {
                     categories = data.categories;
                     localStorage.setItem('bee_categories', JSON.stringify(categories));
@@ -196,11 +207,14 @@
                 }
 
                 const serverNote = data.note || "";
-                if (serverNote !== cachedData) {
+                // Nếu chưa có cache, hoặc dữ liệu server khác cache thì mới vẽ lại
+                if (!cachedData || serverNote !== cachedData) {
                     localStorage.setItem('bee_cache_' + date, serverNote);
                     renderTasks(serverNote);
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.log("Ngoại tuyến");
+            }
         }
 
         async function postToServer(fullLineText, actionType) {
@@ -255,9 +269,10 @@
             return li;
         }
 
-        function updateStats() {
+function updateStats() {
+            // Đảm bảo loại trừ các dòng chữ "Đang tải..." (.loading-text) để đếm chính xác số việc
             document.getElementById('pending-count').innerText = pendingList.querySelectorAll('li:not(.loading-text)').length;
-            document.getElementById('completed-count').innerText = completedList.querySelectorAll('li').length;
+            document.getElementById('completed-count').innerText = completedList.querySelectorAll('li:not(.loading-text)').length;
         }
 
         updateDateDisplay(selectedDate);
