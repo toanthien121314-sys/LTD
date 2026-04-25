@@ -289,6 +289,58 @@ function updateStats() {
             document.getElementById('pending-count').innerText = pendingList.querySelectorAll('li:not(.loading-text)').length;
             document.getElementById('completed-count').innerText = completedList.querySelectorAll('li:not(.loading-text)').length;
         }
+        // --- TÍNH NĂNG VUỐT (SWIPE) CHUYỂN NGÀY ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        const swipeZone = document.querySelector('.container');
+
+        swipeZone.addEventListener('touchstart', function(event) {
+            touchStartX = event.changedTouches[0].screenX;
+            touchStartY = event.changedTouches[0].screenY;
+        }, false);
+
+        swipeZone.addEventListener('touchend', function(event) {
+            touchEndX = event.changedTouches[0].screenX;
+            touchEndY = event.changedTouches[0].screenY;
+            handleSwipe();
+        }, false);
+
+        function handleSwipe() {
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            const threshold = 60; // Khoảng cách vuốt tối thiểu (pixel) để tránh chạm nhầm
+
+            // Kiểm tra xem người dùng vuốt ngang nhiều hơn vuốt dọc (tránh nhầm với cuộn trang lên/xuống)
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > threshold) {
+                
+                // Lấy ngày hiện tại và tính toán
+                let currentDateObj = new Date(selectedDate);
+
+                if (diffX > 0) {
+                    // Vuốt sang phải (từ trái sang phải) => Trở về hôm trước
+                    currentDateObj.setDate(currentDateObj.getDate() - 1);
+                } else {
+                    // Vuốt sang trái (từ phải sang trái) => Tiến tới hôm sau
+                    currentDateObj.setDate(currentDateObj.getDate() + 1);
+                }
+
+                // Cập nhật lại ngày vào hệ thống
+                // Lưu ý: bù đắp múi giờ để tránh lỗi lùi ngày khi dùng toISOString()
+                currentDateObj.setMinutes(currentDateObj.getMinutes() - currentDateObj.getTimezoneOffset());
+                selectedDate = currentDateObj.toISOString().split('T')[0];
+                
+                // Đồng bộ với thẻ input ẩn
+                document.getElementById('task-date-input').value = selectedDate;
+
+                // Cập nhật giao diện và tải dữ liệu mới
+                updateDateDisplay(selectedDate);
+                loadTasksFromServer(selectedDate);
+            }
+        }
+        // --- KẾT THÚC PHẦN VUỐT CHUYỂN NGÀY ---
 
         updateDateDisplay(selectedDate);
         loadTasksFromServer(selectedDate);
