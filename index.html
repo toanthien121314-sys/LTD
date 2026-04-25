@@ -108,7 +108,7 @@
     <div id="category-container">
         <div id="category-bar">
             <div id="tag-list" style="display: flex; gap: 8px;"></div>
-            <button id="add-tag-btn"><i class="fas fa-plus"></i> Thêm thẻ</button>
+            <button id="add-tag-btn"><i class="fas fa-plus"></i> Thêm mục</button>
         </div>
     </div>
 
@@ -144,17 +144,21 @@
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block'; });
     installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; } });
 
+    // --- 1. HÀM CHUẨN HÓA MÚI GIỜ VIỆT NAM ---
+    function getLocalDateString(dateObj) {
+        const d = dateObj ? new Date(dateObj) : new Date();
+        const offset = d.getTimezoneOffset() * 60000;
+        return (new Date(d.getTime() - offset)).toISOString().slice(0, 10);
+    }
+
     window.onload = function() {
         const input = document.getElementById('task-input');
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
 
-        // *** ĐIỀN LẠI URL WEB APP CỦA BẠN VÀO ĐÂY ***
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3XvfedVrHD0AY3fiIv2brR_GlEKPlJp-WVzbHyvmw7sqn4H9UHJ7JUNZVLPljs8L7/exec";
 
-        let selectedDate = new Date().toISOString().split('T')[0];
-
-        // --- QUẢN LÝ THẺ & ĐỒNG BỘ CLOUD ---
+        let selectedDate = getLocalDateString();
         let categories = JSON.parse(localStorage.getItem('bee_categories')) || ["Chung", "Nhân sự", "Kế toán", "Quầy vé"];
         let currentCat = localStorage.getItem('bee_current_cat') || "Chung";
 
@@ -193,87 +197,14 @@
         };
         renderTagBar();
 
-        function updateDateDisplay(dateStr) {
-            const d = new Date(dateStr);
-            document.getElementById('selected-date-display').innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-        }
-        // --- HÀM TỰ ĐỘNG DỌN DẸP BỘ NHỚ CŨ (Chèn vào đây) ---
-        function autoCleanupOldCache() {
-            const daysToKeep = 15; // Giữ lại 15 ngày gần nhất
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-            const cutoffStr = cutoffDate.toISOString().split('T')[0];
-
-            let count = 0;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('bee_cache_')) {
-                    const datePart = key.replace('bee_cache_', '');
-                    if (datePart < cutoffStr) {
-                        localStorage.removeItem(key);
-                        count++;
-                    }
-                }
-            }
-            if (count > 0) console.log("Đã dọn dẹp bộ nhớ cũ.");
-        }
-        // --- LOGIC LỊCH CUSTOM XỊN XÒ ---
-        const calOverlay = document.getElementById('custom-calendar-overlay');
-        const calGrid = document.getElementById('cal-grid');
-        const calTitle = document.getElementById('cal-title');
-        let calCurrentMonth = new Date(selectedDate);
-
-        function renderCalendar() {
-            calGrid.innerHTML = "";
-            const year = calCurrentMonth.getFullYear();
-            const month = calCurrentMonth.getMonth();
-            calTitle.innerText = `Tháng ${month + 1}, ${year}`;
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            for (let i = 0; i < firstDay; i++) {
-                const emptyDiv = document.createElement('div');
-                emptyDiv.className = "cal-day empty";
-                calGrid.appendChild(emptyDiv);
-            }
-
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayDiv = document.createElement('div');
-                const thisDateObj = new Date(year, month, i);
-                thisDateObj.setMinutes(thisDateObj.getMinutes() - thisDateObj.getTimezoneOffset());
-                const thisDateStr = thisDateObj.toISOString().split('T')[0];
-
-                dayDiv.className = "cal-day";
-                dayDiv.innerText = i;
-                
-                if (thisDateStr === todayStr) dayDiv.classList.add('today');
-                if (thisDateStr === selectedDate) dayDiv.classList.add('selected');
-
-                dayDiv.onclick = () => {
-                    selectedDate = thisDateStr;
-                    updateDateDisplay(selectedDate);
-                    loadTasksFromServer(selectedDate);
-                    closeCalendar();
-                };
-                calGrid.appendChild(dayDiv);
-            }
+        function updateStats() {
+            const spinner = "<i class='fas fa-circle-notch fa-spin' style='font-size: 0.8rem; color: var(--primary-color);'></i>";
+            const isPloading = pendingList.querySelector('.loading-text');
+            const isCloading = completedList.querySelector('.loading-text');
+            document.getElementById('pending-count').innerHTML = isPloading ? spinner : pendingList.querySelectorAll('li:not(.loading-text)').length;
+            document.getElementById('completed-count').innerHTML = isCloading ? spinner : completedList.querySelectorAll('li:not(.loading-text)').length;
         }
 
-        function openCalendar() {
-            calCurrentMonth = new Date(selectedDate);
-            renderCalendar();
-            calOverlay.classList.add('show');
-        }
-        function closeCalendar() { calOverlay.classList.remove('show'); }
-
-        document.getElementById('date-btn').onclick = openCalendar;
-        calOverlay.onclick = (e) => { if (e.target === calOverlay) closeCalendar(); };
-        document.getElementById('cal-prev').onclick = () => { calCurrentMonth.setMonth(calCurrentMonth.getMonth() - 1); renderCalendar(); };
-        document.getElementById('cal-next').onclick = () => { calCurrentMonth.setMonth(calCurrentMonth.getMonth() + 1); renderCalendar(); };
-
-        // --- RENDER DỮ LIỆU ---
         function renderTasks(noteText) {
             pendingList.innerHTML = ""; completedList.innerHTML = "";
             if (!noteText) return updateStats();
@@ -307,14 +238,14 @@
             updateStats();
         }
 
+        // --- 2. HÀM TẢI DỮ LIỆU HIỂN THỊ CACHE LIỀN MẠCH ---
         async function loadTasksFromServer(date) {
-            const cachedData = localStorage.getItem('bee_cache_' + date);
-            if (cachedData) { renderTasks(cachedData); } 
-            else {
-                const loadingHTML = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
-                pendingList.innerHTML = loadingHTML; completedList.innerHTML = loadingHTML;
-                const spinner = "<i class='fas fa-circle-notch fa-spin' style='font-size: 0.8rem; color: var(--primary-color);'></i>";
-                document.getElementById('pending-count').innerHTML = spinner; document.getElementById('completed-count').innerHTML = spinner;
+            const cache = localStorage.getItem('bee_cache_' + date);
+            if (cache !== null) {
+                renderTasks(cache);
+            } else {
+                const loader = "<li class='loading-text'><i class='fas fa-spinner fa-spin'></i> Đang tải...</li>";
+                pendingList.innerHTML = loader; completedList.innerHTML = loader; updateStats();
             }
 
             try {
@@ -326,10 +257,12 @@
                 }
 
                 const serverNote = data.note || "";
-                if (!cachedData || serverNote !== cachedData) {
+                if (serverNote !== cache) {
                     localStorage.setItem('bee_cache_' + date, serverNote); renderTasks(serverNote);
                 }
-            } catch (error) {}
+            } catch (error) {
+                if (cache === null) renderTasks("");
+            }
         }
 
         async function postToServer(fullLineText, actionType) {
@@ -379,12 +312,59 @@
             return li;
         }
 
-        function updateStats() {
-            document.getElementById('pending-count').innerText = pendingList.querySelectorAll('li:not(.loading-text)').length;
-            document.getElementById('completed-count').innerText = completedList.querySelectorAll('li:not(.loading-text)').length;
+        const calOverlay = document.getElementById('custom-calendar-overlay');
+        const calGrid = document.getElementById('cal-grid');
+        const calTitle = document.getElementById('cal-title');
+        let calCurrentMonth = new Date(selectedDate);
+
+        function renderCalendar() {
+            calGrid.innerHTML = "";
+            const year = calCurrentMonth.getFullYear();
+            const month = calCurrentMonth.getMonth();
+            calTitle.innerText = `Tháng ${month + 1}, ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayStr = getLocalDateString();
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = "cal-day empty";
+                calGrid.appendChild(emptyDiv);
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDiv = document.createElement('div');
+                const thisDateStr = getLocalDateString(new Date(year, month, i));
+
+                dayDiv.className = "cal-day";
+                dayDiv.innerText = i;
+                
+                if (thisDateStr === todayStr) dayDiv.classList.add('today');
+                if (thisDateStr === selectedDate) dayDiv.classList.add('selected');
+
+                dayDiv.onclick = () => {
+                    selectedDate = thisDateStr;
+                    updateDateDisplay(selectedDate);
+                    loadTasksFromServer(selectedDate);
+                    closeCalendar();
+                };
+                calGrid.appendChild(dayDiv);
+            }
         }
 
-        // --- TÍNH NĂNG VUỐT THÔNG MINH ---
+        function openCalendar() {
+            calCurrentMonth = new Date(selectedDate);
+            renderCalendar();
+            calOverlay.classList.add('show');
+        }
+        function closeCalendar() { calOverlay.classList.remove('show'); }
+
+        document.getElementById('date-btn').onclick = openCalendar;
+        calOverlay.onclick = (e) => { if (e.target === calOverlay) closeCalendar(); };
+        document.getElementById('cal-prev').onclick = () => { calCurrentMonth.setMonth(calCurrentMonth.getMonth() - 1); renderCalendar(); };
+        document.getElementById('cal-next').onclick = () => { calCurrentMonth.setMonth(calCurrentMonth.getMonth() + 1); renderCalendar(); };
+
         let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0;
         const appContainer = document.getElementById('app-container');
 
@@ -405,74 +385,77 @@
             const threshold = 60;
 
             if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > threshold) {
-                // Vuốt Ngang (Đổi ngày)
                 let currentDateObj = new Date(selectedDate);
                 if (diffX > 0) currentDateObj.setDate(currentDateObj.getDate() - 1);
                 else currentDateObj.setDate(currentDateObj.getDate() + 1);
                 
-                currentDateObj.setMinutes(currentDateObj.getMinutes() - currentDateObj.getTimezoneOffset());
-                selectedDate = currentDateObj.toISOString().split('T')[0];
+                selectedDate = getLocalDateString(currentDateObj);
                 updateDateDisplay(selectedDate);
                 loadTasksFromServer(selectedDate);
             } 
             else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > threshold) {
-                // Vuốt Dọc
                 if (diffY > 0 && appContainer.scrollTop === 0) {
-                    // Kéo từ trên xuống (Chỉ mở lịch khi đang cuộn ở tuốt trên cùng màn hình)
                     openCalendar();
                 } else if (diffY < 0 && calOverlay.classList.contains('show')) {
-                    // Vuốt lên khi lịch đang mở -> Đóng lịch
                     closeCalendar();
                 }
             }
         }
 
-        // --- TÍNH NĂNG TẢI NGẦM (PRELOAD) 30 NGÀY ---
-        async function preload30DaysBackground() {
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            
-            // App sẽ ghi nhớ: Mỗi ngày chỉ chạy quét tải ngầm 1 lần duy nhất để không làm nóng máy
-            const lastPreload = localStorage.getItem('bee_last_preload_date');
-            if (lastPreload === todayStr) return;
+        function updateDateDisplay(dateStr) {
+            const d = new Date(dateStr);
+            document.getElementById('selected-date-display').innerText = `Ngày: ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        }
 
-            console.log("Bắt đầu tải ngầm dữ liệu 30 ngày tới...");
-            
-            // Chạy vòng lặp 30 ngày tiếp theo
-            for (let i = 1; i <= 30; i++) {
-                let targetDate = new Date();
-                targetDate.setDate(today.getDate() + i);
-                targetDate.setMinutes(targetDate.getMinutes() - targetDate.getTimezoneOffset()); // Bù múi giờ Việt Nam
-                let dateStr = targetDate.toISOString().split('T')[0];
+        function autoCleanupOldCache() {
+            const daysToKeep = 15;
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+            const cutoffStr = getLocalDateString(cutoffDate);
 
-                // CHỈ TẢI nếu trong bộ nhớ đệm của máy chưa có dữ liệu ngày này
-                if (localStorage.getItem('bee_cache_' + dateStr) === null) {
-                    try {
-                        let res = await fetch(`${WEB_APP_URL}?date=${dateStr}`);
-                        if (res.ok) {
-                            let data = await res.json();
-                            // Lưu vào bộ nhớ đệm (nếu ngày đó trống thì lưu chuỗi rỗng)
-                            localStorage.setItem('bee_cache_' + dateStr, data.note || "");
-                            console.log("Đã tải ngầm xong ngày:", dateStr);
-                        }
-                        // RẤT QUAN TRỌNG: Phải nghỉ 1 giây giữa các lần tải để Google không khóa Script vì nghi ngờ Spam
-                        await new Promise(r => setTimeout(r, 1000));
-                    } catch (e) {
-                        console.log("Lỗi tải ngầm ngày:", dateStr);
+            let count = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('bee_cache_')) {
+                    const datePart = key.replace('bee_cache_', '');
+                    if (datePart < cutoffStr) {
+                        localStorage.removeItem(key);
+                        count++;
                     }
                 }
             }
-            
-            // Đánh dấu là hôm nay đã hoàn thành nhiệm vụ tải ngầm 30 ngày
-            localStorage.setItem('bee_last_preload_date', todayStr);
-            console.log("Hoàn tất chu trình tải ngầm!");
+            if (count > 0) console.log("Đã dọn dẹp bộ nhớ cũ.");
         }
-        // Chạy các lệnh khởi động App
-        autoCleanupOldCache(); // 1. Dọn rác cũ
-        updateDateDisplay(selectedDate); // 2. Hiện ngày hiện tại
-        loadTasksFromServer(selectedDate); // 3. Tải dữ liệu
 
-        // Đợi 3 giây sau khi App khởi động xong các giao diện chính mới bắt đầu chạy ngầm cho nhẹ máy
+        // --- 3. HÀM TẢI NGẦM LIÊN TỤC 30 NGÀY ---
+        async function preload30DaysBackground() {
+            const today = new Date();
+            console.log("Bắt đầu vá dữ liệu đệm 30 ngày...");
+
+            for (let i = 0; i <= 30; i++) {
+                let t = new Date();
+                t.setDate(today.getDate() + i);
+                let ds = getLocalDateString(t);
+
+                if (!localStorage.getItem('bee_cache_' + ds)) {
+                    try {
+                        let res = await fetch(`${WEB_APP_URL}?date=${ds}`);
+                        if (res.ok) {
+                            let data = await res.json();
+                            localStorage.setItem('bee_cache_' + ds, data.note || "");
+                        }
+                        await new Promise(r => setTimeout(r, 300));
+                    } catch (e) {
+                        break; 
+                    }
+                }
+            }
+            console.log("Hoàn tất vá dữ liệu!");
+        }
+
+        autoCleanupOldCache();
+        updateDateDisplay(selectedDate);
+        loadTasksFromServer(selectedDate);
         setTimeout(preload30DaysBackground, 3000);
     };
 </script>
