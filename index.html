@@ -17,8 +17,8 @@
         body { 
             background: var(--bg-color); min-height: 100vh; display: flex; justify-content: center; padding: 0; 
             -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: manipulation;
-            overscroll-behavior-y: none; /* RẤT QUAN TRỌNG: Chặn vuốt tải lại trang của Chrome/Safari */
-            overflow: hidden; /* Khóa cuộn trang tổng để vuốt mượt hơn */
+            overscroll-behavior-y: none; 
+            overflow: hidden; 
         }
         
         .container { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px 20px; position: relative; height: 100vh; overflow-y: auto; }
@@ -33,21 +33,8 @@
         
         header h1 { color: var(--text-main); font-size: 2rem; margin-bottom: 5px; letter-spacing: -0.5px; }
         #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
-        #theme-settings-btn {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            margin-left: 8px;
-            vertical-align: middle;
-            transition: 0.3s;
-            opacity: 0.5; /* Mờ nhẹ để không gây xao nhãng */
-        }
-
-        #theme-settings-btn:hover {
-            opacity: 1;
-            color: var(--primary-color);
-            transform: rotate(45deg); /* Xoay nhẹ khi di chuột vào cho sinh động */
-        }
+        #theme-settings-btn { font-size: 1.1rem; color: var(--text-secondary); cursor: pointer; margin-left: 8px; vertical-align: middle; transition: 0.3s; opacity: 0.5; }
+        #theme-settings-btn:hover { opacity: 1; color: var(--primary-color); transform: rotate(45deg); }
         
         #category-container { margin-bottom: 15px; }
         #category-bar { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; align-items: center; }
@@ -68,12 +55,11 @@
         ul { list-style: none; margin-bottom: 30px; }
         li { background: #fff; padding: 15px; border-radius: 16px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border: 1.5px solid var(--border-light); transition: all 0.3s ease; }
         li.fade-out { opacity: 0 !important; transform: scale(0.9) !important; }
-        .check-btn { padding: 5px; cursor: pointer; font-size: 1.4rem; color: #e2e8f0; transition: 0.3s; }
+        .check-btn { padding: 5px; cursor: pointer; font-size: 1.4rem; transition: 0.3s; }
         .task-text { flex: 1; color: var(--text-main); font-size: 1rem; font-weight: 500; }
         .del-btn { padding: 5px; cursor: pointer; font-size: 1.1rem; color: var(--danger-color); opacity: 0.4; transition: 0.3s; }
         #completed-list li { border-color: transparent; background: #fdfdfd; }
         #completed-list .task-text { text-decoration: line-through; color: var(--text-secondary); opacity: 0.6; }
-        #completed-list .check-btn { color: var(--primary-color); }
         .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px; border: none !important; width: 100%; }
 
         /* --- GIAO DIỆN LỊCH CUSTOM XỊN XÒ --- */
@@ -203,7 +189,7 @@
     }
 
     window.onload = function() {
-        // --- LOGIC ĐỔI MÀU CHỦ ĐỀ VÀ ĐỒNG BỘ CLOUD ---
+        // --- LOGIC ĐỔI MÀU CHỦ ĐỀ ---
         const themeBtn = document.getElementById('theme-settings-btn');
         const themePicker = document.getElementById('theme-picker');
         if(themePicker) {
@@ -213,9 +199,6 @@
                 const newColor = e.target.value;
                 document.documentElement.style.setProperty('--primary-color', newColor);
                 localStorage.setItem('bee_theme_color', newColor);
-            };
-            themePicker.onchange = () => {
-                saveAndSyncSettings();
             };
         }
         if(themeBtn && themePicker) { themeBtn.onclick = () => themePicker.click(); }
@@ -238,11 +221,10 @@
         }
         let currentCat = localStorage.getItem('bee_current_cat') || "Chung";
 
-        function saveAndSyncSettings() {
+        function saveAndSyncTags() {
             localStorage.setItem('bee_categories', JSON.stringify(categories));
             renderTagBar();
-            const activeTheme = localStorage.getItem('bee_theme_color') || '#4ade80';
-            try { fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "save_settings", categories: categories, themeColor: activeTheme }) }); } catch(e){}
+            try { fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "save_categories", categories: categories }) }); } catch(e){}
         }
 
         function renderTagBar() {
@@ -268,7 +250,7 @@
                 btn.onclick = (e) => {
                     if (e.target.classList.contains('remove-tag')) {
                         categories = categories.filter(c => c.name !== cat.name);
-                        saveAndSyncSettings();
+                        saveAndSyncTags();
                     } else {
                         currentCat = cat.name;
                         localStorage.setItem('bee_current_cat', cat.name);
@@ -287,7 +269,7 @@
             const color = document.getElementById('new-tag-color').value;
             if (name && !categories.find(c => c.name === name)) {
                 categories.push({ name: name, color: color });
-                saveAndSyncSettings();
+                saveAndSyncTags();
                 closeAddTagModal();
             }
         };
@@ -301,6 +283,13 @@
             document.getElementById('completed-count').innerHTML = isCloading ? spinner : completedList.querySelectorAll('li:not(.loading-text)').length;
         }
 
+        // --- TÌM MÀU CỦA THẺ ---
+        function getCatColor(catName) {
+            const cat = categories.find(c => c.name === catName);
+            return cat ? cat.color : 'var(--primary-color)';
+        }
+
+        // --- ĐÃ NÂNG CẤP ĐỂ TRUYỀN MÀU XUỐNG TỪNG DÒNG ---
         function renderTasks(noteText) {
             pendingList.innerHTML = ""; completedList.innerHTML = "";
             if (!noteText) return updateStats();
@@ -322,14 +311,27 @@
             });
 
             for (let cat in pGroups) {
-                const header = document.createElement('span'); header.className = 'group-header'; header.innerText = cat.toUpperCase();
+                const col = getCatColor(cat);
+                const header = document.createElement('span'); 
+                header.className = 'group-header'; 
+                header.innerText = cat.toUpperCase();
+                // Đổi màu chữ và viền đứt đoạn của tiêu đề nhóm
+                header.style.color = col;
+                header.style.borderBottomColor = col;
+                
                 pendingList.appendChild(header);
-                pGroups[cat].forEach(line => pendingList.appendChild(createRow(line.trim(), false)));
+                pGroups[cat].forEach(line => pendingList.appendChild(createRow(line.trim(), false, col)));
             }
             for (let cat in cGroups) {
-                const header = document.createElement('span'); header.className = 'group-header'; header.innerText = cat.toUpperCase();
+                const col = getCatColor(cat);
+                const header = document.createElement('span'); 
+                header.className = 'group-header'; 
+                header.innerText = cat.toUpperCase();
+                header.style.color = col;
+                header.style.borderBottomColor = col;
+
                 completedList.appendChild(header);
-                cGroups[cat].forEach(line => completedList.appendChild(createRow(line.trim(), true)));
+                cGroups[cat].forEach(line => completedList.appendChild(createRow(line.trim(), true, col)));
             }
             updateStats();
         }
@@ -354,13 +356,6 @@
                     }
                     localStorage.setItem('bee_categories', JSON.stringify(categories)); 
                     renderTagBar();
-                }
-
-                // Cập nhật màu chủ đề từ Cloud
-                if (data.themeColor && data.themeColor !== localStorage.getItem('bee_theme_color')) {
-                    document.documentElement.style.setProperty('--primary-color', data.themeColor);
-                    localStorage.setItem('bee_theme_color', data.themeColor);
-                    if(document.getElementById('theme-picker')) document.getElementById('theme-picker').value = data.themeColor;
                 }
 
                 const serverNote = data.note || "";
@@ -391,11 +386,16 @@
         };
         input.onkeypress = (e) => { if (e.key === 'Enter') document.getElementById('add-btn').click(); };
 
-        function createRow(fullLineText, isDone) {
+        // --- ĐÃ NÂNG CẤP ĐỂ TÔ MÀU RIÊNG TỪNG DÒNG (THÊM BIẾN catColor) ---
+        function createRow(fullLineText, isDone, catColor) {
             const cleanText = fullLineText.replace(/^-\s*(\d{2}:\d{2}:\s*)?/, "").replace(/\[.*?\]\s*/, "").replace(/\(hoàn thành\)$/, "").trim();
             const li = document.createElement('li');
             li.innerHTML = `<div class="check-btn"><i class="${isDone ? 'fas fa-check-circle' : 'far fa-circle'}"></i></div><span class="task-text">${cleanText}</span><div class="del-btn"><i class="fas fa-trash-alt"></i></div>`;
             
+            // TÔ MÀU ICON CHECK VÀ THÊM VẠCH MÀU TRÁI (Làm cho App cực kỳ Pro)
+            li.querySelector('.check-btn').style.color = catColor;
+            li.style.borderLeft = `4px solid ${catColor}`;
+
             li.querySelector('.check-btn').onclick = () => {
                 li.classList.add('fade-out'); 
                 setTimeout(() => {
@@ -534,11 +534,8 @@
 
         async function preload30DaysBackground() {
             const today = new Date();
-            console.log("Bắt đầu vá dữ liệu đệm 30 ngày...");
-
             for (let i = 0; i <= 30; i++) {
-                let t = new Date();
-                t.setDate(today.getDate() + i);
+                let t = new Date(); t.setDate(today.getDate() + i);
                 let ds = getLocalDateString(t);
 
                 if (!localStorage.getItem('bee_cache_' + ds)) {
@@ -549,12 +546,9 @@
                             localStorage.setItem('bee_cache_' + ds, data.note || "");
                         }
                         await new Promise(r => setTimeout(r, 300));
-                    } catch (e) {
-                        break; 
-                    }
+                    } catch (e) { break; }
                 }
             }
-            console.log("Hoàn tất vá dữ liệu!");
         }
 
         autoCleanupOldCache();
