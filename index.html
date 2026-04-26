@@ -33,6 +33,21 @@
         
         header h1 { color: var(--text-main); font-size: 2rem; margin-bottom: 5px; letter-spacing: -0.5px; }
         #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
+        #theme-settings-btn {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-left: 8px;
+    vertical-align: middle;
+    transition: 0.3s;
+    opacity: 0.5; /* Mờ nhẹ để không gây xao nhãng */
+}
+
+#theme-settings-btn:hover {
+    opacity: 1;
+    color: var(--primary-color);
+    transform: rotate(45deg); /* Xoay nhẹ khi di chuột vào cho sinh động */
+}
         
         #category-container { margin-bottom: 15px; }
         #category-bar { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; align-items: center; }
@@ -100,10 +115,14 @@
         <button id="install-btn" style="display: none;"><i class="fas fa-download"></i> Tải App</button>
         <button id="date-btn"><i class="fas fa-calendar-alt"></i> Hôm khác</button>
     </div>
-    <header>
-        <h1>Bee boy 🐝</h1>
-        <span id="selected-date-display">Ngày: --/--/----</span>
-    </header>
+<header>
+    <h1>
+        Bee boy 🐝 
+        <i class="fas fa-cog" id="theme-settings-btn" title="Đổi màu chủ đề"></i>
+    </h1>
+    <input type="color" id="theme-picker" style="display: none;">
+    <span id="selected-date-display">Ngày: --/--/----</span>
+</header>
 
     <div id="category-container">
         <div id="category-bar">
@@ -152,6 +171,26 @@
     }
 
     window.onload = function() {
+        // --- LOGIC ĐỔI MÀU CHỦ ĐỀ ---
+        const themeBtn = document.getElementById('theme-settings-btn');
+        const themePicker = document.getElementById('theme-picker');
+
+        // 1. Tải màu đã lưu từ bộ nhớ (nếu có), nếu không dùng màu mặc định #4ade80
+        const savedColor = localStorage.getItem('bee_theme_color') || '#4ade80';
+        document.documentElement.style.setProperty('--primary-color', savedColor);
+        themePicker.value = savedColor;
+
+        // 2. Khi bấm vào bánh răng -> Mở hộp chọn màu
+        themeBtn.onclick = () => themePicker.click();
+
+        // 3. Khi người dùng chọn màu mới
+        themePicker.oninput = (e) => {
+            const newColor = e.target.value;
+            // Cập nhật biến CSS toàn App
+            document.documentElement.style.setProperty('--primary-color', newColor);
+            // Lưu vào localStorage
+            localStorage.setItem('bee_theme_color', newColor);
+        };
         const input = document.getElementById('task-input');
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
