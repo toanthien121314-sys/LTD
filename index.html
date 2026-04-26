@@ -107,6 +107,12 @@
         
         .cal-swipe-hint { text-align: center; font-size: 0.75rem; color: #cbd5e0; margin-top: 15px; }
     </style>
+    <script>
+        (function() {
+            const savedColor = localStorage.getItem('bee_theme_color') || '#4ade80';
+            document.documentElement.style.setProperty('--primary-color', savedColor);
+        })();
+    </script>
 </head>
 <body>
 
@@ -174,23 +180,23 @@
         // --- LOGIC ĐỔI MÀU CHỦ ĐỀ ---
         const themeBtn = document.getElementById('theme-settings-btn');
         const themePicker = document.getElementById('theme-picker');
+        if(themePicker) {
+            // Lấy màu từ bộ nhớ để gán vào ô chọn màu
+            const currentTheme = localStorage.getItem('bee_theme_color') || '#4ade80';
+            themePicker.value = currentTheme;
+            
+            // Khi người dùng chọn màu mới trên bảng màu
+            themePicker.oninput = (e) => {
+                const newColor = e.target.value;
+                document.documentElement.style.setProperty('--primary-color', newColor);
+                localStorage.setItem('bee_theme_color', newColor);
+            };
+        }
 
-        // 1. Tải màu đã lưu từ bộ nhớ (nếu có), nếu không dùng màu mặc định #4ade80
-        const savedColor = localStorage.getItem('bee_theme_color') || '#4ade80';
-        document.documentElement.style.setProperty('--primary-color', savedColor);
-        themePicker.value = savedColor;
-
-        // 2. Khi bấm vào bánh răng -> Mở hộp chọn màu
-        themeBtn.onclick = () => themePicker.click();
-
-        // 3. Khi người dùng chọn màu mới
-        themePicker.oninput = (e) => {
-            const newColor = e.target.value;
-            // Cập nhật biến CSS toàn App
-            document.documentElement.style.setProperty('--primary-color', newColor);
-            // Lưu vào localStorage
-            localStorage.setItem('bee_theme_color', newColor);
-        };
+        if(themeBtn && themePicker) {
+            // Bấm bánh răng thì mở bảng màu
+            themeBtn.onclick = () => themePicker.click();
+        }
         const input = document.getElementById('task-input');
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
