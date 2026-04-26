@@ -13,12 +13,11 @@
         :root { --primary-color: #4ade80; --danger-color: #ff0000; --bg-color: #ffffff; --card-bg: #ffffff; --text-main: #102a43; --text-secondary: #627d98; --border-light: #f1f5f9; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', -apple-system, sans-serif; }
         
-        /* Chống zoom, chống bôi đen và CHỐNG PULL-TO-REFRESH của trình duyệt */
         body { 
             background: var(--bg-color); min-height: 100vh; display: flex; justify-content: center; padding: 0; 
             -webkit-user-select: none; -ms-user-select: none; user-select: none; touch-action: manipulation;
-            overscroll-behavior-y: none; /* RẤT QUAN TRỌNG: Chặn vuốt tải lại trang của Chrome/Safari */
-            overflow: hidden; /* Khóa cuộn trang tổng để vuốt mượt hơn */
+            overscroll-behavior-y: none; 
+            overflow: hidden; 
         }
         
         .container { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px 20px; position: relative; height: 100vh; overflow-y: auto; }
@@ -27,33 +26,19 @@
         #install-btn { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-right: 5px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
         
-        /* Đổi nút chọn ngày cho hợp giao diện mới */
         #date-btn { background: #f8fafc; border: 1px solid var(--border-light); padding: 8px 12px; border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
         #date-btn:active { transform: scale(0.95); background: #e2e8f0; }
         
         header h1 { color: var(--text-main); font-size: 2rem; margin-bottom: 5px; letter-spacing: -0.5px; }
         #selected-date-display { font-size: 0.9rem; color: var(--primary-color); font-weight: 600; margin-bottom: 25px; display: block; }
-        #theme-settings-btn {
-    font-size: 1.1rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    margin-left: 8px;
-    vertical-align: middle;
-    transition: 0.3s;
-    opacity: 0.5; /* Mờ nhẹ để không gây xao nhãng */
-}
-
-#theme-settings-btn:hover {
-    opacity: 1;
-    color: var(--primary-color);
-    transform: rotate(45deg); /* Xoay nhẹ khi di chuột vào cho sinh động */
-}
+        #theme-settings-btn { font-size: 1.1rem; color: var(--text-secondary); cursor: pointer; margin-left: 8px; vertical-align: middle; transition: 0.3s; opacity: 0.5; }
+        #theme-settings-btn:hover { opacity: 1; color: var(--primary-color); transform: rotate(45deg); }
         
         #category-container { margin-bottom: 15px; }
         #category-bar { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; align-items: center; }
         #category-bar::-webkit-scrollbar { display: none; }
-        .cat-tag { padding: 6px 15px; border-radius: 20px; border: 1px solid #e2e8f0; background: #f8fafc; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .cat-tag.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .cat-tag { padding: 6px 15px; border-radius: 20px; border: 1.5px solid #e2e8f0; background: #f8fafc; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        .cat-tag.active { border-color: transparent !important; }
         .cat-tag .remove-tag { margin-left: 8px; font-size: 0.7rem; opacity: 0.7; }
         #add-tag-btn { background: none; border: 1px dashed #cbd5e0; color: #94a3b8; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; }
         .group-header { font-size: 0.75rem; color: var(--primary-color); font-weight: 800; margin: 15px 0 8px 5px; display: block; letter-spacing: 0.5px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; }
@@ -76,27 +61,15 @@
         #completed-list .check-btn { color: var(--primary-color); }
         .loading-text { text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 20px; border: none !important; width: 100%; }
 
-        /* --- GIAO DIỆN LỊCH CUSTOM XỊN XÒ --- */
-        #custom-calendar-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(16, 42, 67, 0.4); backdrop-filter: blur(4px);
-            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-            display: flex; justify-content: center; align-items: flex-start; padding-top: 20px;
-        }
+        /* --- GIAO DIỆN LỊCH CUSTOM --- */
+        #custom-calendar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 42, 67, 0.4); backdrop-filter: blur(4px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; display: flex; justify-content: center; align-items: flex-start; padding-top: 20px; }
         #custom-calendar-overlay.show { opacity: 1; pointer-events: auto; }
-        
-        #custom-calendar {
-            background: #fff; width: 90%; max-width: 380px; border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 20px;
-            transform: translateY(-120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        #custom-calendar { background: #fff; width: 90%; max-width: 380px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 20px; transform: translateY(-120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #custom-calendar-overlay.show #custom-calendar { transform: translateY(0); }
-        
         .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .cal-header button { background: #f8fafc; border: none; width: 36px; height: 36px; border-radius: 12px; color: var(--text-main); font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
         .cal-header button:active { background: #e2e8f0; transform: scale(0.9); }
         .cal-header h3 { font-size: 1.1rem; color: var(--text-main); margin: 0; }
-        
         .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; }
         .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .cal-day { aspect-ratio: 1; display: flex; justify-content: center; align-items: center; font-size: 0.95rem; color: var(--text-main); font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
@@ -104,8 +77,22 @@
         .cal-day.empty { pointer-events: none; }
         .cal-day.today { color: var(--primary-color); background: rgba(74, 222, 128, 0.1); }
         .cal-day.selected { background: var(--primary-color); color: white; box-shadow: 0 4px 10px rgba(74, 222, 128, 0.4); }
-        
         .cal-swipe-hint { text-align: center; font-size: 0.75rem; color: #cbd5e0; margin-top: 15px; }
+
+        /* --- GIAO DIỆN MODAL THÊM THẺ --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 42, 67, 0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: white; width: 85%; max-width: 320px; padding: 25px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content h3 { margin-bottom: 15px; color: var(--text-main); font-size: 1.1rem; }
+        .modal-content input[type="text"] { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; margin-bottom: 20px; outline: none; font-size: 1rem; }
+        .color-selection { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .color-selection p { font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; }
+        #new-tag-color { border: none; width: 45px; height: 45px; cursor: pointer; background: none; border-radius: 8px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions button { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
+        .btn-cancel { background: #f1f5f9; color: var(--text-secondary); }
+        .btn-confirm { background: var(--primary-color); color: white; }
     </style>
     <script>
         (function() {
@@ -121,19 +108,16 @@
         <button id="install-btn" style="display: none;"><i class="fas fa-download"></i> Tải App</button>
         <button id="date-btn"><i class="fas fa-calendar-alt"></i> Hôm khác</button>
     </div>
-<header>
-    <h1>
-        Bee boy 🐝 
-        <i class="fas fa-cog" id="theme-settings-btn" title="Đổi màu chủ đề"></i>
-    </h1>
-    <input type="color" id="theme-picker" style="display: none;">
-    <span id="selected-date-display">Ngày: --/--/----</span>
-</header>
+    <header>
+        <h1>Bee boy 🐝 <i class="fas fa-cog" id="theme-settings-btn" title="Đổi màu chủ đề"></i></h1>
+        <input type="color" id="theme-picker" style="display: none;">
+        <span id="selected-date-display">Ngày: --/--/----</span>
+    </header>
 
     <div id="category-container">
         <div id="category-bar">
             <div id="tag-list" style="display: flex; gap: 8px;"></div>
-            <button id="add-tag-btn"><i class="fas fa-plus"></i> Thêm mục</button>
+            <button id="add-tag-btn" onclick="openAddTagModal()"><i class="fas fa-plus"></i> Thêm thẻ</button>
         </div>
     </div>
 
@@ -161,6 +145,21 @@
             <div class="cal-swipe-hint"><i class="fas fa-chevron-up"></i> Vuốt lên để đóng</div>
         </div>
     </div>
+
+    <div id="tag-modal-overlay" class="modal-overlay" onclick="if(event.target === this) closeAddTagModal()">
+        <div class="modal-content">
+            <h3>Tạo thẻ mới</h3>
+            <input type="text" id="new-tag-name" placeholder="Tên thẻ (VD: Kho, CSVC...)" autocomplete="off">
+            <div class="color-selection">
+                <p>Màu đại diện:</p>
+                <input type="color" id="new-tag-color" value="#4ade80">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeAddTagModal()">Hủy</button>
+                <button class="btn-confirm" onclick="confirmAddTag()">Xác nhận</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -169,7 +168,6 @@
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block'; });
     installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; } });
 
-    // --- 1. HÀM CHUẨN HÓA MÚI GIỜ VIỆT NAM ---
     function getLocalDateString(dateObj) {
         const d = dateObj ? new Date(dateObj) : new Date();
         const offset = d.getTimezoneOffset() * 60000;
@@ -181,22 +179,16 @@
         const themeBtn = document.getElementById('theme-settings-btn');
         const themePicker = document.getElementById('theme-picker');
         if(themePicker) {
-            // Lấy màu từ bộ nhớ để gán vào ô chọn màu
             const currentTheme = localStorage.getItem('bee_theme_color') || '#4ade80';
             themePicker.value = currentTheme;
-            
-            // Khi người dùng chọn màu mới trên bảng màu
             themePicker.oninput = (e) => {
                 const newColor = e.target.value;
                 document.documentElement.style.setProperty('--primary-color', newColor);
                 localStorage.setItem('bee_theme_color', newColor);
             };
         }
+        if(themeBtn && themePicker) { themeBtn.onclick = () => themePicker.click(); }
 
-        if(themeBtn && themePicker) {
-            // Bấm bánh răng thì mở bảng màu
-            themeBtn.onclick = () => themePicker.click();
-        }
         const input = document.getElementById('task-input');
         const pendingList = document.getElementById('pending-list');
         const completedList = document.getElementById('completed-list');
@@ -204,40 +196,67 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3XvfedVrHD0AY3fiIv2brR_GlEKPlJp-WVzbHyvmw7sqn4H9UHJ7JUNZVLPljs8L7/exec";
 
         let selectedDate = getLocalDateString();
-        let categories = JSON.parse(localStorage.getItem('bee_categories')) || ["Chung", "Nhân sự", "Kế toán", "Quầy vé"];
+        
+        // --- NÂNG CẤP DỮ LIỆU THẺ (HỖ TRỢ MÀU SẮC) ---
+        let categories = JSON.parse(localStorage.getItem('bee_categories')) || [
+            {name: "Chung", color: "#4ade80"}, {name: "Nhân sự", color: "#3b82f6"}, {name: "Kế toán", color: "#f59e0b"}
+        ];
+        // Sửa lỗi tự động nếu bản cũ đang lưu là chữ
+        if (categories.length > 0 && typeof categories[0] === 'string') {
+            categories = categories.map(name => ({ name: name, color: '#4ade80' }));
+        }
         let currentCat = localStorage.getItem('bee_current_cat') || "Chung";
 
-        async function syncCategoriesToServer() {
-            try { await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "save_categories", categories: categories }) }); } catch (error) {}
+        function saveAndSyncTags() {
+            localStorage.setItem('bee_categories', JSON.stringify(categories));
+            renderTagBar();
+            try { fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "save_categories", categories: categories }) }); } catch(e){}
         }
 
         function renderTagBar() {
             const tagList = document.getElementById('tag-list');
             tagList.innerHTML = "";
             categories.forEach(cat => {
+                const isActive = currentCat === cat.name;
                 const btn = document.createElement('button');
-                btn.className = `cat-tag ${currentCat === cat ? 'active' : ''}`;
-                btn.innerHTML = `${cat}${cat !== 'Chung' ? ' <i class="fas fa-times remove-tag"></i>' : ''}`;
+                btn.className = `cat-tag ${isActive ? 'active' : ''}`;
+                
+                // Áp dụng màu riêng cho thẻ
+                if (isActive) {
+                    btn.style.backgroundColor = cat.color;
+                    btn.style.color = "white";
+                    btn.style.borderColor = cat.color;
+                } else {
+                    btn.style.backgroundColor = "transparent";
+                    btn.style.color = cat.color;
+                    btn.style.borderColor = cat.color;
+                }
+
+                btn.innerHTML = `${cat.name}${cat.name !== 'Chung' ? ' <i class="fas fa-times remove-tag"></i>' : ''}`;
                 btn.onclick = (e) => {
                     if (e.target.classList.contains('remove-tag')) {
-                        categories = categories.filter(c => c !== cat);
-                        localStorage.setItem('bee_categories', JSON.stringify(categories));
-                        if (currentCat === cat) { currentCat = "Chung"; localStorage.setItem('bee_current_cat', "Chung"); }
-                        renderTagBar(); syncCategoriesToServer();
+                        categories = categories.filter(c => c.name !== cat.name);
+                        saveAndSyncTags();
                     } else {
-                        currentCat = cat; localStorage.setItem('bee_current_cat', cat); renderTagBar();
+                        currentCat = cat.name;
+                        localStorage.setItem('bee_current_cat', cat.name);
+                        renderTagBar();
                     }
                 };
                 tagList.appendChild(btn);
             });
         }
         
-        document.getElementById('add-tag-btn').onclick = () => {
-            const newCat = prompt("Nhập tên mục mới (VD: Kho, CSVC...):");
-            if (newCat && newCat.trim() && !categories.includes(newCat.trim())) {
-                categories.push(newCat.trim());
-                localStorage.setItem('bee_categories', JSON.stringify(categories));
-                renderTagBar(); syncCategoriesToServer();
+        // --- LOGIC HỘP THOẠI (MODAL) ---
+        window.openAddTagModal = () => { document.getElementById('tag-modal-overlay').classList.add('show'); document.getElementById('new-tag-name').focus(); };
+        window.closeAddTagModal = () => { document.getElementById('tag-modal-overlay').classList.remove('show'); document.getElementById('new-tag-name').value = ''; };
+        window.confirmAddTag = () => {
+            const name = document.getElementById('new-tag-name').value.trim();
+            const color = document.getElementById('new-tag-color').value;
+            if (name && !categories.find(c => c.name === name)) {
+                categories.push({ name: name, color: color });
+                saveAndSyncTags();
+                closeAddTagModal();
             }
         };
         renderTagBar();
@@ -283,7 +302,6 @@
             updateStats();
         }
 
-        // --- 2. HÀM TẢI DỮ LIỆU HIỂN THỊ CACHE LIỀN MẠCH ---
         async function loadTasksFromServer(date) {
             const cache = localStorage.getItem('bee_cache_' + date);
             if (cache !== null) {
@@ -298,15 +316,22 @@
                 const data = await response.json();
                 
                 if (data.categories) {
-                    categories = data.categories; localStorage.setItem('bee_categories', JSON.stringify(categories)); renderTagBar();
+                    categories = data.categories; 
+                    if (categories.length > 0 && typeof categories[0] === 'string') {
+                        categories = categories.map(name => ({ name: name, color: '#4ade80' }));
+                    }
+                    localStorage.setItem('bee_categories', JSON.stringify(categories)); 
+                    renderTagBar();
                 }
 
                 const serverNote = data.note || "";
                 if (serverNote !== cache) {
-                    localStorage.setItem('bee_cache_' + date, serverNote); renderTasks(serverNote);
+                    localStorage.setItem('bee_cache_' + date, serverNote); 
+                    // FIX LỖI VUỐT NHANH BỊ KẸT CHỮ "ĐANG TẢI": Chỉ hiển thị nếu người dùng vẫn đang xem ngày này
+                    if (date === selectedDate) renderTasks(serverNote);
                 }
             } catch (error) {
-                if (cache === null) renderTasks("");
+                if (cache === null && date === selectedDate) renderTasks("");
             }
         }
 
@@ -398,11 +423,7 @@
             }
         }
 
-        function openCalendar() {
-            calCurrentMonth = new Date(selectedDate);
-            renderCalendar();
-            calOverlay.classList.add('show');
-        }
+        function openCalendar() { calCurrentMonth = new Date(selectedDate); renderCalendar(); calOverlay.classList.add('show'); }
         function closeCalendar() { calOverlay.classList.remove('show'); }
 
         document.getElementById('date-btn').onclick = openCalendar;
@@ -439,11 +460,8 @@
                 loadTasksFromServer(selectedDate);
             } 
             else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > threshold) {
-                if (diffY > 0 && appContainer.scrollTop === 0) {
-                    openCalendar();
-                } else if (diffY < 0 && calOverlay.classList.contains('show')) {
-                    closeCalendar();
-                }
+                if (diffY > 0 && appContainer.scrollTop === 0) openCalendar();
+                else if (diffY < 0 && calOverlay.classList.contains('show')) closeCalendar();
             }
         }
 
@@ -472,14 +490,10 @@
             if (count > 0) console.log("Đã dọn dẹp bộ nhớ cũ.");
         }
 
-        // --- 3. HÀM TẢI NGẦM LIÊN TỤC 30 NGÀY ---
         async function preload30DaysBackground() {
             const today = new Date();
-            console.log("Bắt đầu vá dữ liệu đệm 30 ngày...");
-
             for (let i = 0; i <= 30; i++) {
-                let t = new Date();
-                t.setDate(today.getDate() + i);
+                let t = new Date(); t.setDate(today.getDate() + i);
                 let ds = getLocalDateString(t);
 
                 if (!localStorage.getItem('bee_cache_' + ds)) {
@@ -490,12 +504,9 @@
                             localStorage.setItem('bee_cache_' + ds, data.note || "");
                         }
                         await new Promise(r => setTimeout(r, 300));
-                    } catch (e) {
-                        break; 
-                    }
+                    } catch (e) { break; }
                 }
             }
-            console.log("Hoàn tất vá dữ liệu!");
         }
 
         autoCleanupOldCache();
